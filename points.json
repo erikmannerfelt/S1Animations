@@ -1,0 +1,47 @@
+{
+  "vallakra": {
+    "name": "Vallåkrabreen",
+    "start_date": "2018-01-01",
+    "end_date": "2023-04-01",
+    "left": 544000,
+    "bottom": 8638500,
+    "right": 555000,
+    "top": 8650000,
+    "standardization": {
+      "left": 546000,
+      "bottom": 8640000,
+      "right": 548000,
+      "top": 8641000
+    }
+  },
+  "scheele": {
+    "name": "Scheelebreen",
+    "start_date": "2018-01-01",
+    "end_date": "2023-04-01",
+    "left": 542000,
+    "top": 8636000,
+    "right": 552500,
+    "bottom": 8619000,
+    "standardization": {
+        "left": 543000,
+        "bottom": 8633000,
+        "right": 545000,
+        "top": 8636000
+      }
+    },
+    "rabot_moraine": {
+      "name": "Rabotbreen moraine",
+      "start_date": "2018-01-01",
+      "end_date": "2023-04-01",
+      "left": 559700,
+      "top": 8692300,
+      "right": 570400,
+      "bottom": 8687300,
+      "standardization": {
+        "left": 559700,
+        "top": 8692300,
+        "right": 563000,
+        "bottom": 8690500
+      }
+    }
+  }
