@@ -1,8 +1,8 @@
 {
   "vallakra": {
     "name": "Vallåkrabreen",
-    "start_date": "2018-01-01",
-    "end_date": "2023-04-01",
+    "start_date": "2020-01-01",
+    "end_date": "2030-05-01",
     "left": 544000,
     "bottom": 8638500,
     "right": 555000,
@@ -17,7 +17,7 @@
   "scheele": {
     "name": "Scheelebreen",
     "start_date": "2018-01-01",
-    "end_date": "2023-04-01",
+    "end_date": "2030-05-02",
     "left": 542000,
     "top": 8636000,
     "right": 552500,
@@ -42,6 +42,84 @@
         "top": 8692300,
         "right": 563000,
         "bottom": 8690500
+      }
+    },
+    "natascha": {
+      "name": "Nataschabreen",
+      "start_date": "2018-01-01",
+      "end_date": "2030-04-01",
+      "left": 551300 ,
+      "top": 8633200,
+      "right": 563200,
+      "bottom": 8621300,
+      "standardization": {
+        "left": 556900,
+        "top": 8629630,
+        "right": 558000,
+        "bottom": 8628520
+      }
+    },
+    "liestol": {
+      "name": "Liestølbreen",
+      "start_date": "2018-01-01",
+      "end_date": "2030-04-01",
+      "left": 530000,
+      "top": 8604800,
+      "right": 556100,
+      "bottom": 8586000,
+      "resolution": 20,
+      "standardization": {
+        "left": 533190 ,
+        "top": 8595000,
+        "right": 538000,
+        "bottom": 8591700
+      }
+    },
+    "bore": {
+      "name": "Borebreen",
+      "start_date": "2018-01-01",
+      "end_date": "2030-04-01",
+      "left": 463680,
+      "top": 8722880,
+      "right": 486700,
+      "bottom": 8697100,
+      "resolution": 20,
+      "standardization": {
+        "left": 482100,
+        "top": 8707220,
+        "right": 485140,
+        "bottom": 8705230
+      }
+    },
+    "iskuras": {
+      "name": "Iskuras",
+      "start_date": "2020-01-01",
+      "end_date": "2023-04-01",
+      "left": 899710,
+      "bottom": 7724630,
+      "right": 907120,
+      "top": 7729060,
+      "standardization": {
+        "left": 899710,
+        "top": 7729060,
+        "right": 901870,
+        "bottom": 7727140
+      }
+    },
+    "austfonna": {
+      "name": "Austfonna",
+      "start_date": "2020-01-01",
+      "end_date": "2023-05-01",
+      "left": 613300,
+      "bottom": 8805000,
+      "right": 738000,
+      "top": 8935000,
+      "resolution": 100,
+      "standardization": {
+        "left": 642300,
+        "bottom": 8882900,
+        "right": 650900,
+        "top": 8880000
       }
     }
   }

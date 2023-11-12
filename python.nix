@@ -80,6 +80,8 @@ in
   gdal
   earthengine-api
   folium
+  zarr
+  dask
   #google-auth-oauthlib
   pydrive2
 ]

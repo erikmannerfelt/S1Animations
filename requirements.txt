@@ -1,0 +1,15 @@
+ipython
+xarray
+h5netcdf
+geopandas
+odfpy
+pyarrow
+pytest
+rasterio
+gdal
+earthengine-api
+folium
+zarr
+dask
+pydrive2
+glacier_lengths
