@@ -109,7 +109,7 @@
     "austfonna": {
       "name": "Austfonna",
       "start_date": "2020-01-01",
-      "end_date": "2023-05-01",
+      "end_date": "2030-05-01",
       "left": 613300,
       "bottom": 8805000,
       "right": 738000,
@@ -121,5 +121,38 @@
         "right": 650900,
         "top": 8880000
       }
+    },
+    "negri": {
+      "name": "Negribreen",
+      "start_date": "2020-01-01",
+      "end_date": "2030-01-01",
+      "left": 582350,
+      "bottom": 8720700,
+      "right": 593800,
+      "top": 8734150,
+      "standardization": {
+        "left": 590080,
+        "bottom": 8732310,
+        "right": 592860,
+        "top": 8734750
+      }
+    },
+    "petermann": {
+      "name": "Petermannbreen",
+      "start_date": "2015-01-01",
+      "end_date": "2030-01-01",
+      "left": 577470,
+      "bottom": 8710620,
+      "right": 586820,
+      "top": 8718260,
+      "standardization": {
+        "left": 580700,
+        "bottom": 8716430,
+        "right": 582140,
+        "top": 8717870
+      }
+      
+
+
     }
   }

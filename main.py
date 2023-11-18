@@ -167,6 +167,7 @@ def download_region_data(region: Region, n_workers: int | None = 1, preview: boo
         .filterBounds(ee.Geometry.BBox(*bbox_wgs84))
         .filterDate(region.start_date, region.end_date)
         .filter(ee.Filter.eq("instrumentMode", "IW"))
+        .filter(ee.Filter.eq("platform_number", "A"))
     )
 
     img_info_list = []
@@ -216,7 +217,7 @@ def download_region_data(region: Region, n_workers: int | None = 1, preview: boo
                 }
             )
 
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=90)
 
         if response.status_code != 200:
             raise ValueError(f"{response.status_code}: {str(response.content)[:200]}")
@@ -242,7 +243,6 @@ def download_region_data(region: Region, n_workers: int | None = 1, preview: boo
         arrays = {
             "image_metadata": xr.DataArray(data=[image_info.to_json()], coords=time_coord),
             "relative_orbit_nr": xr.DataArray(data=[image_info["relativeOrbitNumber_start"]], coords=time_coord),
-            "platform": xr.DataArray(data=[image_info["platform_number"]], coords=time_coord)
         }
         encoding = {}
         for i, pol in enumerate(pols):
@@ -316,19 +316,20 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
 
     os.makedirs(frame_dir, exist_ok=True)
     data = xr.open_zarr(data_path)
-    def get_frame_filenames(i: int) -> Path:
-        date = str(pd.to_datetime(data[band_name].attrs["times"][i], unit="ms").date())
-        return frame_dir.joinpath(f"{band_name}/frame_{band_name}_{date}.jpg")
 
-    frame_paths = [get_frame_filenames(i=i) for i in range(len(data[band_name].attrs["times"]))]
-    frames_missing = not all(path.is_file() for path in frame_paths)
+    def get_frame_filenames(i: int, times_arr = None) -> Path:
+
+        if times_arr is None:
+            times_arr = pd.to_datetime(data[band_name].attrs["times"], unit="ms")
+        date = str(pd.Timestamp(times_arr[i]).date())
+        return frame_dir.joinpath(f"{band_name}/frame_{band_name}_{date}.jpg")
 
     anim_filename = data_path.parent.joinpath(f"{region.key}_{band_name.lower()}.mp4")
     anim_lr_filename = anim_filename.with_stem(anim_filename.stem + "_lr")
     anims_missing = (not anim_filename.is_file()) or (not anim_lr_filename.is_file())
 
-    if (not frames_missing) and (not anims_missing):
-        return
+    if (not anims_missing):
+      return
 
     band = data[band_name]
     # Filter out missing values by the "times" attr
@@ -339,23 +340,30 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
     band.attrs["times"] = np.array(band.attrs["times"]).astype("datetime64[ms]")
     band = band.resample(time="1D").mean().dropna("time", how="all").load()
 
+    # After filtering out empty files, list the frame paths again
+    frame_paths = [get_frame_filenames(i=i, times_arr=band.time.values) for i in range(band.shape[0])]
+    frames_missing = not all(path.is_file() for path in frame_paths)
+
     band = band.where(band != 0.0).interpolate_na("x")
 
     if region.standardization is not None:
-        band /= -band.sel(
+        standardization = band.sel(
             x=slice(region.standardization["left"], region.standardization["right"]),
             y=slice(region.standardization["top"], region.standardization["bottom"]),
-        ).mean(["x", "y"])
+        ).mean(["x", "y"]).interpolate_na("time").fillna(-1)
+        band /= -standardization
 
     read_lock = threading.Lock()
 
-    def process(i: int, progress_bar: tqdm) -> Path:
+    def process(i: int, out_path: Path) -> Path | None:
 
         with read_lock:
             image = band.isel(time=i).load()
 
         date = str(image.time.dt.date.values)
-        out_path = get_frame_filenames(i=i)
+
+        if not np.any(np.isfinite(image.values)):
+            return None
 
         fig = plt.figure(figsize=(8, 8.5))
         axis = fig.add_subplot(111)
@@ -378,33 +386,43 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
 
         plt.close()
 
-        progress_bar.update()
-
         return out_path
 
-    if frames_missing:
+    new_frame_paths = []
+    missing_frames = []
+    for i, frame in enumerate(frame_paths):
+        if frame.is_file():
+            new_frame_paths.append((i, frame))
+        else:
+            missing_frames.append((i, frame))
+    if len(missing_frames) > 0:
         os.makedirs(frame_dir.joinpath(band_name), exist_ok=True)
-        with tqdm(total=band.shape[0], smoothing=0.1, desc="Generating frames") as progress_bar:
-            if n_workers != 1:
-                raise NotImplementedError("Matplotlib warns about multiple processes failing")
-                with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
-                    list(executor.map(lambda i: process(i, progress_bar=progress_bar), range(band.shape[0])))
+        for i, filepath in tqdm(missing_frames, smoothing=0.1, desc="Generating frames"):
+            result = process(i, filepath)
 
-            else:
-                for i in range(band.shape[0]):
-                    process(i, progress_bar=progress_bar)
+            if result is None:
+                continue
+            new_frame_paths.append((i, result))
+
+    new_frame_paths.sort(key=lambda ip: ip[0])
+    frame_paths = new_frame_paths
+
+    if len(new_frame_paths) == 0:
+        raise ValueError("Got no frames to generate animation")
 
     if frames_missing or anims_missing:
 
         with tempfile.TemporaryDirectory() as temp_dir_str:
+            temp_dir = Path(temp_dir_str)
 
-            for i, frame_path in enumerate(frame_paths):
+            for i, frame_path in frame_paths:
                 filename = Path(temp_dir_str).joinpath(f"frame_{str(i).zfill(4)}.jpg")
                 shutil.copy(frame_path, filename)
 
 
             print(f"Generating {anim_filename}")
-
+            
+            temp_anim = temp_dir / "anim.mp4"
             subprocess.run([
                 "/usr/bin/env",
                 "ffmpeg",
@@ -419,9 +437,13 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
                 "libx264",
                 "-pix_fmt",
                 "yuv420p",
-                str(anim_filename),
+                str(temp_anim),
             ], capture_output=True, check=True)
+
+            shutil.move(temp_anim, anim_filename)
             print(f"Generating {anim_lr_filename}")
+
+            temp_anim_lr = temp_dir / "anim_lr.mp4"
             subprocess.run(
                 [
                     "/usr/bin/env",
@@ -435,11 +457,12 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
                     "libx265",
                     "-crf",
                     "28",
-                    str(anim_lr_filename),
+                    str(temp_anim_lr),
                 ],
                 capture_output=True,
                 check=True,
             )
+            shutil.move(temp_anim_lr, anim_lr_filename)
 
 
 
@@ -447,7 +470,14 @@ def main():
     regions = load_regions()
 
     for region in regions:
+        print(region)
         filepath = download_region_data(region, n_workers=None)
+
+        if region.key == "scheele":
+            build_vrts(filepath)
+
+        if region.key == "iskuras":
+            continue
 
         plot_data(region, "ASCENDING_HH")
         #build_vrts(filepath)
