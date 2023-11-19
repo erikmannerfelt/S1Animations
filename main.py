@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import rasterio as rio
 import rasterio.warp
+import rasterio.crs
 import requests
 import shapely.geometry
 import xarray as xr
@@ -107,10 +108,10 @@ def build_vrts(data_path: Path) -> None:
 
     all_times = np.array(data.time.values)
     for pol in data.data_vars:
-        if not any(k in pol for k in ["ASCENDING", "DESCENDING"]):
+        if not any(k in str(pol) for k in ["ASCENDING", "DESCENDING"]):
             continue
 
-        crs = rio.crs.CRS.from_wkt(data[pol].attrs["_CRS"]["wkt"])
+        crs = rasterio.crs.CRS.from_wkt(data[pol].attrs["_CRS"]["wkt"])
 
         to_build = []
         for time_s in data[pol].attrs["times"]:
@@ -565,6 +566,9 @@ def main():
 
     for region in regions:
         print(region)
+
+        if region.key != "arnesen":
+            continue
 
         filepath = download_region_data(region, n_workers=None)
 

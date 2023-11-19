@@ -15,3 +15,4 @@ pydrive2
 glacier_lengths
 autorift
 scikitimage
+bottleneck

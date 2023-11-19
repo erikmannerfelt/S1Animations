@@ -63,6 +63,8 @@ def plot_velocities(velocity_data_path: Path):
     # plt.show()
 
 def preprocess_radar(image: np.ndarray) -> np.ndarray:
+    image = image.copy()
+    image[~np.isfinite(image)] = np.nanmedian(image)
     image = image - image.min()
     return np.clip(image * 3, a_min=1, a_max=255).astype("uint8")
 
@@ -81,6 +83,28 @@ def measure_velocities(
             raise ValueError("This should be unreachable")
 
         data = data.sel(time=data.attrs["times"])
+        data = data.where(data != 0.)
+
+        data["time_hrs"] = data.time / (1e9 * 3600)
+        data["time_hrs"] -= data["time_hrs"].min()
+
+        tree = scipy.spatial.KDTree(data["time_hrs"].values[:, None])
+        distances, indices = tree.query(x=data["time_hrs"].values[:, None], k=2, distance_upper_bound=1)
+        data["new_time"] = "time", data["time"].values
+
+        times = data["time"].values.copy()
+        for i, i2 in enumerate(indices[:, 1]):
+            if not np.isfinite(distances[i, 1]):
+                continue
+
+            data["new_time"].loc[{"time": times[i]}] = np.mean([times[i], times[i2]])
+
+       
+        data = data.groupby("new_time").mean().rename(new_time="time")
+        
+        #data = data.interpolate_na("x", allow_rechunk=True).interpolate_na("y")
+        data = data.ffill("x").ffill("y")
+      
 
         data = data.where((np.abs(data).sum(["x", "y"]) > 100).compute(), drop=True)
 
@@ -399,7 +423,7 @@ def analyze(vel_path: Path):
             plt.ylabel("Velocity (m/d)")
             plt.legend(loc="upper left")
 
-            plt.ylim(0, max(np.percentile(quant.isel(quantile=2), 99), quant.isel(quantile=1).max().item() * 1.05))
+            plt.ylim(0, np.nanmax([np.percentile(quant.isel(quantile=2), 99), quant.isel(quantile=1).max().item() * 1.05]))
 
             xlim = quant.time.astype(float).min().item(),quant.time.astype(float).max().item() 
             # xlim = plt.gca().get_xlim()
