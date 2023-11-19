@@ -112,30 +112,58 @@ def build_vrts(data_path: Path) -> None:
 
         crs = rio.crs.CRS.from_wkt(data[pol].attrs["_CRS"]["wkt"])
 
-        for time_s in tqdm(data[pol].attrs["times"], desc=f"Generating {pol} vrts"):
-
+        to_build = []
+        for time_s in data[pol].attrs["times"]:
             i = np.argwhere(all_times == time_s).ravel()[0] 
             time = pd.to_datetime(time_s * 1e6).isoformat().replace(":", "-")
 
-            filename = pol + "_" + time + ".vrt"
+            filename = str(pol) + "_" + time + ".vrt"
             filepath = data_path.parent.joinpath(f"vrts/{pol}/{filename}")
             if filepath.is_file():
                 continue
 
-            os.makedirs(filepath.parent, exist_ok=True)
+            to_build.append((i, filepath))
 
-            subprocess.run([
-                "gdalbuildvrt",
-                "-a_srs",
-            f"epsg:{crs.to_epsg()}",
-            filepath.absolute(),
-            f"ZARR:{data_path.absolute()}:/{pol}:{i}"            
-            ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=True
-            )
-        break
+            
+        if len(to_build) > 0:
+            for i, filepath in tqdm(to_build, desc=f"Generating {pol}"):
+                os.makedirs(filepath.parent, exist_ok=True)
+
+                subprocess.run([
+                    "gdalbuildvrt",
+                    "-a_srs",
+                f"epsg:{crs.to_epsg()}",
+                filepath.absolute(),
+                f"ZARR:{data_path.absolute()}:/{pol}:{i}"            
+                ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=True
+                )
+                
+
+        # for time_s in tqdm(data[pol].attrs["times"], desc=f"Generating {pol} vrts"):
+        #     i = np.argwhere(all_times == time_s).ravel()[0] 
+        #     time = pd.to_datetime(time_s * 1e6).isoformat().replace(":", "-")
+
+        #     filename = pol + "_" + time + ".vrt"
+        #     filepath = data_path.parent.joinpath(f"vrts/{pol}/{filename}")
+        #     if filepath.is_file():
+        #         continue
+
+        #     os.makedirs(filepath.parent, exist_ok=True)
+
+        #     subprocess.run([
+        #         "gdalbuildvrt",
+        #         "-a_srs",
+        #     f"epsg:{crs.to_epsg()}",
+        #     filepath.absolute(),
+        #     f"ZARR:{data_path.absolute()}:/{pol}:{i}"            
+        #     ],
+        #         stdout=subprocess.PIPE,
+        #         stderr=subprocess.PIPE,
+        #         check=True
+        #     )
 
 def download_region_data(region: Region, n_workers: int | None = 1, preview: bool = False) -> Path:
 
@@ -324,7 +352,7 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
         date = str(pd.Timestamp(times_arr[i]).date())
         return frame_dir.joinpath(f"{band_name}/frame_{band_name}_{date}.jpg")
 
-    anim_filename = data_path.parent.joinpath(f"{region.key}_{band_name.lower()}.mp4")
+    anim_filename = data_path.parent.joinpath(f"animations/{region.key}_{band_name.lower()}.mp4")
     anim_lr_filename = anim_filename.with_stem(anim_filename.stem + "_lr")
     anims_missing = (not anim_filename.is_file()) or (not anim_lr_filename.is_file())
 
@@ -465,12 +493,79 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
             shutil.move(temp_anim_lr, anim_lr_filename)
 
 
+def animate(frame_dir: Path, output_path: Path):
+
+    if output_path.suffix != ".mp4":
+        raise ValueError(f"Output path must be .mp4. Given: {output_path}")
+
+    output_path_lr = output_path.with_stem(output_path.stem + "_lr")
+
+    if output_path.is_file() and output_path_lr.is_file():
+        return output_path, output_path_lr
+
+    output_path.parent.mkdir(exist_ok=True, parents=True)
+
+    with tempfile.TemporaryDirectory() as temp_dir_str:
+        temp_dir = Path(temp_dir_str)
+
+        for i, frame_path in enumerate(sorted(list(frame_dir.glob("*.jpg")))):
+            filename = Path(temp_dir_str).joinpath(f"frame_{str(i).zfill(4)}.jpg")
+            shutil.copy(frame_path, filename)
+
+        print(f"Generating {output_path}")
+        
+        temp_anim = temp_dir / "anim.mp4"
+        subprocess.run([
+            "/usr/bin/env",
+            "ffmpeg",
+            "-framerate",
+            "30",
+            "-y",
+            "-pattern_type",
+            "glob",
+            "-i",
+            f"{temp_dir_str}/*.jpg",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            str(temp_anim),
+        ], capture_output=True, check=True)
+
+        shutil.move(temp_anim, output_path)
+        print(f"Generating {output_path_lr}")
+
+        temp_anim_lr = temp_dir / "anim_lr.mp4"
+        subprocess.run(
+            [
+                "/usr/bin/env",
+                "ffmpeg",
+                "-i",
+                str(output_path),
+                "-y",
+                "-vf",
+                "scale=trunc(iw/4)*2:trunc(ih/4)*2",
+                "-c:v",
+                "libx265",
+                "-crf",
+                "28",
+                str(temp_anim_lr),
+            ],
+            capture_output=True,
+            check=True,
+        )
+        shutil.move(temp_anim_lr, output_path_lr)
+
+    return output_path, output_path_lr
+   
+
 
 def main():
     regions = load_regions()
 
     for region in regions:
         print(region)
+
         filepath = download_region_data(region, n_workers=None)
 
         if region.key == "scheele":
@@ -479,8 +574,11 @@ def main():
         if region.key == "iskuras":
             continue
 
+        # if region.key == "negri":
+        #     build_vrts(filepath)
+            
+
         plot_data(region, "ASCENDING_HH")
-        #build_vrts(filepath)
 if __name__ == "__main__":
     main()
 

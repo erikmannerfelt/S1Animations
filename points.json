@@ -151,8 +151,20 @@
         "right": 582140,
         "top": 8717870
       }
-      
-
-
+    }, 
+    "arnesen": {
+      "name": "Arnesenbreen",
+      "start_date": "2015-01-01",
+      "end_date": "2030-01-01",
+      "left": 569680,
+      "bottom": 8633400,
+      "right": 579870,
+      "top": 8648730,
+      "standardization": {
+        "left": 576710,
+        "bottom": 8645620,
+        "right": 578740,
+        "top": 8647320
+      }
     }
   }
