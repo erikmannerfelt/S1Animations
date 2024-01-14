@@ -19,6 +19,8 @@
           pre-commit
           zsh
           google-cloud-sdk
+          gifsicle
+          ffmpeg
         ])) // {python=my-python;};
 
       in

@@ -166,7 +166,7 @@ def build_vrts(data_path: Path) -> None:
         #         check=True
         #     )
 
-def download_region_data(region: Region, n_workers: int | None = 1, preview: bool = False) -> Path:
+def download_region_data(region: Region, n_workers: int | None = 1, preview: bool = False, redo: bool = False) -> Path:
 
     if preview and n_workers != 1:
         raise ValueError("Call needs to be synchronous (n_workers=1) for preview")
@@ -178,7 +178,10 @@ def download_region_data(region: Region, n_workers: int | None = 1, preview: boo
     merged_scenes_path = output_dir.joinpath("merged_scenes.zarr")
 
     if merged_scenes_path.is_dir():
-        return merged_scenes_path
+        if redo:
+            shutil.rmtree(merged_scenes_path)
+        else:
+            return merged_scenes_path
 
     out_chunks = {"x": 256, "y": 256, "time": 1}
     bbox_wgs84 = region.bbox_wgs84(buffer=500)
@@ -337,7 +340,7 @@ def download_region_data(region: Region, n_workers: int | None = 1, preview: boo
 
 
 
-def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | None = 1) -> None:
+def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | None = 1, redo: bool = False) -> None:
 
     data_path = download_region_data(region=region)
 
@@ -357,8 +360,10 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
     anim_lr_filename = anim_filename.with_stem(anim_filename.stem + "_lr")
     anims_missing = (not anim_filename.is_file()) or (not anim_lr_filename.is_file())
 
-    if (not anims_missing):
+    if (not anims_missing) and not redo:
       return
+
+    anim_filename.parent.mkdir(exist_ok=True, parents=True)
 
     band = data[band_name]
     # Filter out missing values by the "times" attr
@@ -439,10 +444,11 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
     if len(new_frame_paths) == 0:
         raise ValueError("Got no frames to generate animation")
 
-    if frames_missing or anims_missing:
+    if (frames_missing or anims_missing) or redo:
 
         with tempfile.TemporaryDirectory() as temp_dir_str:
             temp_dir = Path(temp_dir_str)
+            output_path_gif = anim_filename.with_name(anim_filename.stem + "_lr.gif")
 
             for i, frame_path in frame_paths:
                 filename = Path(temp_dir_str).joinpath(f"frame_{str(i).zfill(4)}.jpg")
@@ -493,6 +499,48 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
             )
             shutil.move(temp_anim_lr, anim_lr_filename)
 
+            print(f"Generating {output_path_gif}")
+            temp_gif = temp_dir / "anim.gif"
+            subprocess.run(
+                [
+                    "/usr/bin/env",
+                    "ffmpeg",
+                    "-i",
+                    str(anim_filename),
+                    "-pix_fmt",
+                    "gray",
+                    "-filter_complex",
+                    ",".join(
+                        [
+                            "reverse[r];[0][r]concat=n=2:v=1:a=0",
+                            "fps=10",
+                            "scale=480:-1:flags=lanczos",
+                            "split [a][b];[a]palettegen [p];[b][p] paletteuse",
+                        ]
+                    ),
+                    str(temp_gif),
+                ],
+                capture_output=True,
+                check=True,
+            )
+            temp_gif_opt = temp_gif.with_stem("anim_opt")
+
+            subprocess.run(
+                [
+                    "/usr/bin/env",
+                    "gifsicle",
+                    "-O5",
+                    "--lossy=100",
+                    str(temp_gif),
+                    "-o",
+                    str(temp_gif_opt),
+                ],
+                capture_output=True,
+                check=True,
+            )
+
+            shutil.move(temp_gif_opt, output_path_gif)
+
 
 def animate(frame_dir: Path, output_path: Path):
 
@@ -500,6 +548,7 @@ def animate(frame_dir: Path, output_path: Path):
         raise ValueError(f"Output path must be .mp4. Given: {output_path}")
 
     output_path_lr = output_path.with_stem(output_path.stem + "_lr")
+    output_path_gif = output_path.with_name(output_path.stem + "_lr.gif")
 
     if output_path.is_file() and output_path_lr.is_file():
         return output_path, output_path_lr
@@ -557,6 +606,51 @@ def animate(frame_dir: Path, output_path: Path):
         )
         shutil.move(temp_anim_lr, output_path_lr)
 
+        print(f"Generating {output_path_gif}")
+        temp_gif = temp_dir / "anim.gif"
+        subprocess.run(
+            [
+                "/usr/bin/env",
+                "ffmpeg",
+                "-i",
+                str(output_path),
+                "-pix_fmt",
+                "gray",
+                "-filter_complex",
+                ",".join(
+                    [
+                        "reverse[r];[0][r]concat=n=2:v=1:a=0",
+                        "fps=10",
+                        "scale=480:-1:flags=lanczos",
+                        "split [a][b];[a]palettegen [p];[b][p] paletteuse",
+                    ]
+                ),
+                str(temp_gif),
+            ],
+            capture_output=True,
+            check=True,
+        )
+        temp_gif_opt = temp_gif.with_stem("anim_opt")
+
+        subprocess.run(
+            [
+                "/usr/bin/env",
+                "gifsicle",
+                "-O5",
+                "--lossy=100",
+                str(temp_gif),
+                "-o",
+                str(temp_gif_opt),
+            ],
+            capture_output=True,
+            check=True,
+        )
+
+        shutil.move(temp_gif_opt, output_path_gif)
+            
+        
+
+
     return output_path, output_path_lr
    
 
@@ -564,15 +658,26 @@ def animate(frame_dir: Path, output_path: Path):
 def main():
     regions = load_regions()
 
+    redo = False
+    try:
+        update_raw = os.getenv("AD_UPDATE")
+        if update_raw is not None:
+            if str(update_raw).isnumeric():
+                redo = bool(int(update_raw))
+            else:
+                redo = str(update_raw).lower() == "true"
+                
+    except Exception as e:
+        raise e
     for region in regions:
         print(region)
 
-        if region.key != "arnesen":
+        if region.key not in ["arnesen", "vallakra", "scheele", "liestol", "bore", "natascha"]:
             continue
 
-        filepath = download_region_data(region, n_workers=None)
+        filepath = download_region_data(region, n_workers=None, redo=redo)
 
-        if region.key == "scheele":
+        if region.key in ["scheele", "natascha"]:
             build_vrts(filepath)
 
         if region.key == "iskuras":
@@ -582,7 +687,7 @@ def main():
         #     build_vrts(filepath)
             
 
-        plot_data(region, "ASCENDING_HH")
+        plot_data(region, "DESCENDING_VV", redo=redo)
 if __name__ == "__main__":
     main()
 
