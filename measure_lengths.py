@@ -7,16 +7,23 @@ from pathlib import Path
 
 CACHE_DIR = Path(".cache")
 
-def measure_lengths(glacier: str = "vallakrabreen"):
+def measure_lengths(glacier: str = "vallakrabreen", use_cache: bool = True, radius: float = 200.):
     glacier_dir = Path(f"GIS/shapes/{glacier}")
 
     cache_filepath = CACHE_DIR / f"{glacier}_lengths.csv"
 
-    if cache_filepath.is_file():
+    if cache_filepath.is_file() and use_cache:
         lengths = pd.read_csv(cache_filepath)
     else:
 
-        positions = gpd.read_file(glacier_dir / "surge_front_positions.geojson")
+        if (filepath := glacier_dir / "surge_front_positions.geojson").is_file():
+            pass
+        elif (filepath := glacier_dir / "front_positions.geojson").is_file():
+            pass
+        else:
+            raise ValueError(f"No found front_positions.geojson in {glacier_dir}") 
+
+        positions = gpd.read_file(filepath)
 
         centerline_shp = gpd.read_file(glacier_dir / "centerline.geojson")
         centerline = centerline_shp.iloc[0].geometry
@@ -24,7 +31,7 @@ def measure_lengths(glacier: str = "vallakrabreen"):
         domain_shp = gpd.read_file(glacier_dir / "domain.geojson")
         domain = domain_shp.iloc[0].geometry
 
-        buffered_centerlines = glacier_lengths.buffer_centerline(centerline, domain, max_radius=200)
+        buffered_centerlines = glacier_lengths.buffer_centerline(centerline, domain, max_radius=radius)
 
         lengths = []
         for (i, position) in positions.iterrows():
@@ -54,9 +61,13 @@ def measure_lengths(glacier: str = "vallakrabreen"):
     return lengths
     
 
-def main(glacier: str = "vallakrabreen"):
+def main(glacier: str = "vallakrabreen", use_cache: bool = True):
 
-    all_lengths = measure_lengths(glacier).sort_values("date").reset_index(drop=True)
+    centerline_radii = {
+        "etonfront": 1200,
+    }
+
+    all_lengths = measure_lengths(glacier, use_cache=use_cache, radius=centerline_radii.get(glacier, 200)).sort_values("date").reset_index(drop=True)
 
     key_translation = {
         "vallakrabreen": "vallakra",
@@ -78,6 +89,8 @@ def main(glacier: str = "vallakrabreen"):
 
         })
     lengths = pd.DataFrame.from_records(lengths).sort_values("date")
+
+    print(lengths)
 
     diff_intervals = pd.IntervalIndex.from_arrays(left=lengths["date"].iloc[:-1].values, right=lengths["date"].iloc[1:].values)
 
@@ -112,20 +125,31 @@ def main(glacier: str = "vallakrabreen"):
     diff_per_day["date_from"] = diff_per_day.index.left
     diff_per_day["date_to"] = diff_per_day.index.right
 
+    diff_per_day = diff_per_day.set_index(diff_per_day.index.mid).resample("1M").mean().dropna()
+
     output_dir = Path(f"output/{s1_key}/")
 
     diff_per_day.to_csv(output_dir / f"{s1_key}_length_diff_per_day.csv")
     lengths.to_csv(output_dir / f"{s1_key}_length.csv")
+
+    lengths[["lower", "upper", "mean", "median"]] -= lengths.iloc[0]["median"]
 
     plt.figure(figsize=(8, 5))
     plt.subplot(211)
     plt.fill_between(lengths["date"], lengths["lower"], lengths["upper"], alpha=0.3)
     plt.plot(lengths["date"], lengths["median"])
     plt.ylabel("Length (m)")
+
+    xlim = plt.gca().get_xlim()
+    plt.hlines(0, *xlim, colors="black", linestyles=":", alpha=0.5, zorder=0)
+    plt.xlim(xlim)
     plt.subplot(212)
-    plt.fill_between(diff_per_day.index.mid, diff_per_day["lower"], diff_per_day["upper"], alpha=0.3)
-    plt.plot(diff_per_day.index.mid, diff_per_day["median"])
+    plt.fill_between(diff_per_day.index, diff_per_day["lower"], diff_per_day["upper"], alpha=0.3)
+    plt.plot(diff_per_day.index, diff_per_day["median"])
     plt.ylabel("Advance speed (m/d)")
+    xlim = plt.gca().get_xlim()
+    plt.hlines(0, *xlim, colors="black", linestyles=":", alpha=0.5, zorder=0)
+    plt.xlim(xlim)
 
     plt.tight_layout()
     plt.savefig(output_dir / f"{s1_key}_length.jpg", dpi=600)

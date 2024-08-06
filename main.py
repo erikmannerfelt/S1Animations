@@ -206,7 +206,8 @@ def download_region_data(region: Region, n_workers: int | None = 1, preview: boo
     for img in collection.getInfo()["features"]:
         img_info_list.append(img["properties"] | {k: v for k, v in img.items() if k != "properties"})
 
-    image_infos = pd.DataFrame.from_records(img_info_list)
+    image_infos = pd.DataFrame.from_records(img_info_list).drop_duplicates(subset="system:time_start")
+
     compressor = zarr.Blosc(cname="zstd", clevel=3, shuffle=2)
 
     print(f"Fetching data for {region}. W: {width} px, H: {height} px")
@@ -301,7 +302,7 @@ def download_region_data(region: Region, n_workers: int | None = 1, preview: boo
             for image_dict in images:
                 process(image_dict, progress_bar)
 
-    data = xr.open_mfdataset(temp_paths, engine="zarr")
+    data = xr.open_mfdataset(temp_paths, engine="zarr", combine="nested", concat_dim="time")
     print("Loaded data")
 
     for variable in data.data_vars:
@@ -549,6 +550,7 @@ def animate(frame_dir: Path, output_path: Path):
 
     output_path_lr = output_path.with_stem(output_path.stem + "_lr")
     output_path_gif = output_path.with_name(output_path.stem + "_lr.gif")
+    output_path_rev = output_path.with_name(output_path.stem + "_rev.webm")
 
     if output_path.is_file() and output_path_lr.is_file():
         return output_path, output_path_lr
@@ -647,6 +649,33 @@ def animate(frame_dir: Path, output_path: Path):
         )
 
         shutil.move(temp_gif_opt, output_path_gif)
+
+        
+        skip_secs = {"liestol": 4, "natascha": 4, "scheele": 3, "bore": 3, "vallakra": 1}
+
+        extra = []
+        for key in skip_secs:
+            if key in str(output_path):
+                extra += ["-ss", str(skip_secs[key])]
+
+        temp_rev = temp_dir / "anim_rev.webm"
+        subprocess.run(
+            [
+                "/usr/bin/env",
+                "ffmpeg",
+                *extra,
+                "-i",
+                str(output_path_lr),
+                "-b:v",
+                "-y",
+                "-filter_complex",
+                "'reverse[r];[0][r]concat=n=2:v=1:a=0'",
+                str(temp_rev),
+            ],
+            capture_output=True,
+            check=True,
+        )
+        shutil.move(temp_rev, output_path_rev)
             
         
 
@@ -672,12 +701,12 @@ def main():
     for region in regions:
         print(region)
 
-        if region.key not in ["arnesen", "vallakra", "scheele", "liestol", "bore", "natascha"]:
+        if region.key not in ["arnesen", "vallakra", "scheele", "liestol", "bore", "natascha", "johansen", "petermann", "sonklar", "negri", "doktor", "etonfront"]:
             continue
 
         filepath = download_region_data(region, n_workers=None, redo=redo)
 
-        if region.key in ["scheele", "natascha"]:
+        if region.key in ["scheele", "natascha", "vallakra", "etonfront", "bore", "liestol", "doktor", "arnesen"]:
             build_vrts(filepath)
 
         if region.key == "iskuras":
@@ -685,8 +714,33 @@ def main():
 
         # if region.key == "negri":
         #     build_vrts(filepath)
+
+        if region.key == "scheele" and False:
+            with xr.open_zarr(filepath) as data:
+                from test_autorift import add_geometry
+
+                add_geometry(data, region.key)
+
+                asc = data["DESCENDING_VV"].sel(time=data["DESCENDING_VV"].attrs["times"]).groupby(data["centerline"]).mean()
+
+                with TqdmCallback():
+                    asc.compute()
+
+                asc = asc.where((~asc.isnull().all("time")).compute(), drop=True)
+
+                asc.transpose("centerline", "time").plot(vmin=-20, vmax=20, cmap="RdBu")
+                plt.show()
+                print(asc)
+                return
+
+
+
+                
             
 
+        if region.key in ["ganskij", "etonfront"]:
+            plot_data(region, "ASCENDING_HH", redo=redo)
+            
         plot_data(region, "DESCENDING_VV", redo=redo)
 if __name__ == "__main__":
     main()

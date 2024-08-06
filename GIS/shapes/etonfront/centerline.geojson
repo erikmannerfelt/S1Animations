@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "centerline",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32633" } },
+"features": [
+{ "type": "Feature", "properties": { }, "geometry": { "type": "LineString", "coordinates": [ [ 646347.379032992059365, 8858269.831540277227759 ], [ 634517.11267057643272, 8858316.103768551722169 ] ] } }
+]
+}

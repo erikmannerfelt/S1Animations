@@ -10,6 +10,7 @@ import warnings
 import tempfile
 import shutil
 import zarr
+import datetime
 from osgeo import gdal, gdal_array
 import rasterio.warp
 import rasterio.features
@@ -78,7 +79,19 @@ def measure_velocities(
     data_path = download_region_data(region=region)
         
     with xr.open_zarr(data_path) as all_data:
+        if region.key == "bore":
+            all_data = all_data.sel(x=slice(473000, 481000), y=slice(8710000, 8701300))
+            # all_data["DESCENDING_VV"].isel(time=-1).plot()
+            # plt.show()
+            # raise NotImplementedError()
+
         data: xr.DataArray = all_data[radar_key]
+
+        # if data.shape[1] % max_chip_size != 0:
+        #     data = data.isel(y=slice(0, data.shape[1] - (data.shape[1] % min_chip_size)))
+        # if data.shape[0] % max_chip_size != 0:
+        #     data = data.isel(x=slice(0, data.shape[2] - (data.shape[2] % min_chip_size)))
+
         if data is None:
             raise ValueError("This should be unreachable")
 
@@ -105,8 +118,7 @@ def measure_velocities(
         #data = data.interpolate_na("x", allow_rechunk=True).interpolate_na("y")
         data = data.ffill("x").ffill("y")
       
-
-        data = data.where((np.abs(data).sum(["x", "y"]) > 100).compute(), drop=True)
+        data = data.where((np.abs(data).sum(["x", "y"]) > 100).compute() & (~data.isnull().all("time").compute()), drop=True)
 
         # data -= data.min("time")
         # data = (data * 3).clip(min=1, max=255).astype("uint8")
@@ -133,8 +145,16 @@ def measure_velocities(
             data_before = data.isel(time=i)
             data_after = data.isel(time=i + 1)
 
+            # plt.subplot(2, 1, 1)
+            # plt.imshow(data_before)
+            # plt.subplot(2, 1, 2)
+            # plt.imshow(data_after)
+            # plt.show()
+
             time_before = pd.Timestamp(data_before["time"].item() * 1e6)
             time_after = pd.Timestamp(data_after["time"].item() * 1e6)
+
+            print(f"Measuring {time_before} to {time_after}")
 
             # Assign the common array from the last iteration, if available
             if arr_after is not None:
@@ -144,6 +164,8 @@ def measure_velocities(
 
             arr_after = preprocess_radar(data_after.values.squeeze())
 
+            if debug:
+                print(f"{datetime.datetime.now()} Starting autorift")
             rift = autoRIFT()
 
             rift.I1 = arr_before
@@ -165,6 +187,9 @@ def measure_velocities(
                 warnings.simplefilter("ignore", category=RuntimeWarning)
                 rift.uniform_data_type()
                 rift.runAutorift()
+
+            if debug:
+                print(f"{datetime.datetime.now()} Finished autorift")
 
             if len(xr_coords) == 0:
                 xr_coords = [("y", all_y_coords[rift.yGrid[0, :].astype(int)]), ("x", all_x_coords[rift.xGrid[:, 0].astype(int)])]
@@ -233,7 +258,7 @@ def write_zarr(data: xr.Dataset, out_path: Path):
 
 
 def add_geometry(
-    data: xr.Dataset, gis_key: str, dem_path: Path = Path("/media/storage/Erik/Data/NPI/DEMs/S0_DTM5/NP_S0_DTM5.tif")
+    data: xr.Dataset, gis_key: str, dem_path: Path = Path("/media/storage/Erik/Data/NPI/DEMs/S0_DTM5/NP_S0_DTM5.tif"), buffer_size_px: float = 3.,
 ) -> list[str]:
     gdal.UseExceptions()
 
@@ -297,7 +322,7 @@ def add_geometry(
 
     centerline_points = []
     for dist in np.arange(1, centerline.length + res, res, dtype="uint32"):
-        centerline_points.append((centerline.interpolate(dist).buffer(res * 3), dist))
+        centerline_points.append((centerline.interpolate(dist).buffer(res * buffer_size_px), dist))
 
     for name, polygons in [("domain", domain), ("centerline", centerline_points)]:
         exports.append(name)
@@ -352,8 +377,19 @@ def analyze(vel_path: Path):
     key = vel_path.parent.stem
     pol = vel_path.stem.replace("velocity_", "")
 
+    key_to_gis_translation = {
+        "vallakra": "vallakrabreen",
+    }
+    gis_key = key_to_gis_translation.get(key, key)
+
     with xr.open_dataset(vel_path, engine="zarr") as data, warnings.catch_warnings():
         data = data.sortby("time")
+
+        if "bounds" not in data.attrs:
+            add_geometry(data, gis_key=gis_key)
+
+        if "v" not in data.data_vars:
+            data["v"] = (data["vx"] ** 2 + data["vy"] ** 2) ** 0.5
 
         data.attrs["bounds"] = rio.coords.BoundingBox(*data.attrs["bounds"])
 
@@ -408,6 +444,7 @@ def analyze(vel_path: Path):
 
             quant = data["v"].where(data["centerline"] > 0).quantile([0.7, 0.8, 0.9], dim=["x", "y"])
 
+            pd.DataFrame(quant.values.T, columns=quant.coords["quantile"].values, index=quant.time.values).to_csv(out_path.parent.parent / "velocity_quantiles.csv")
             bins = np.linspace(1, data["centerline"].max().item() + 1, num=50)
             bins_to_use = np.r_[[np.nan], bins + np.diff(bins)[0] / 2]
             data["centerline_binned"] = ("y", "x"), bins_to_use[np.digitize(data["centerline"], bins=bins)]
@@ -417,6 +454,7 @@ def analyze(vel_path: Path):
             centerline = centerline.rename(centerline_binned="distance")
 
             plt.figure(figsize=(12, 6))
+            plt.suptitle(key)
             plt.subplot(2, 1, 1)
             plt.fill_between(quant.time.astype(float), quant.isel(quantile=0), quant.isel(quantile=2), alpha=0.3, label="70th to 90th percentile")
             plt.plot(quant.time.astype(float), quant.isel(quantile=1), label="80th percentile")
@@ -546,23 +584,36 @@ def merge_and_prep_series(paths: list[Path], min_day_diff: float = 4.):
 
 
 
-def main(key: str = "arnesen"):
+def main() -> None:
 
     regions = load_regions()
 
-    region = [region for region in regions if region.key == key][0]
+    # region = [region for region in regions if region.key == key][0]
 
-    pols = ["DESCENDING_VV", "ASCENDING_HH"]
+    for region in regions:
+        if region.key not in ["bore", "scheele", "vallakra", "natascha", "petermann", "johansen", "sonklar", "etonfront"]:
+            continue
 
-    paths = [measure_velocities(region=region, radar_key=pol) for pol in pols]
+        if region.key != "etonfront":
+            continue
 
-    vel_path = merge_and_prep_series(paths)
+        # if region.key != "scheele":
+        #     continue
+        # pols = ["DESCENDING_VV", "ASCENDING_HH"]
 
-    analyze(vel_path)
+        # # The ASCENDING_HH is crazy for some reason
+        # if region.key in ["sonklar", "scheele"]:
+        #     pols = [pols[0]]
+
+        # paths = [measure_velocities(region=region, radar_key=pol, debug=False) for pol in pols]
+        # vel_path = merge_and_prep_series(path)
+        vel_path = measure_velocities(region=region, radar_key="ASCENDING_HH", debug=False)
+
+        analyze(vel_path)
            
-    return
+    # return
 
-    plot_velocities(vel_path)
+    # plot_velocities(vel_path)
 
 
 if __name__ == "__main__":

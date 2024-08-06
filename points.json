@@ -166,5 +166,81 @@
         "right": 578740,
         "top": 8647320
       }
+    },
+    "johansen": {
+      "name": "Johansenbreen",
+      "start_date": "2021-01-01",
+      "end_date": "2030-01-01",
+      "left": 575080,
+      "bottom": 8717200,
+      "right": 586220,
+      "top": 8726170,
+      "standardization": {
+        "left": 584300,
+        "bottom": 8720150,
+        "right": 585610,
+        "top": 8721950
+      }
+    },
+    "ganskij": {
+      "name": "Ganskijbreen",
+      "start_date": "2016-01-01",
+      "end_date": "2030-01-01",
+      "left": 620160,
+      "bottom": 8742050,
+      "right": 628320,
+      "top": 8750790,
+      "standardization": {
+        "left": 620790,
+        "bottom": 8745630,
+        "right": 621770,
+        "top": 8747380
+      }
+    },
+    "sonklar": {
+      "name": "Sonklarbreen",
+      "start_date": "2018-01-01",
+      "end_date": "2030-01-01",
+      "left": 604430,
+      "bottom": 8735950,
+      "right": 616190,
+      "top": 8744690,
+      "standardization": {
+        "left": 611070,
+        "bottom": 8736190,
+        "right": 612460,
+        "top": 8738230
+      }
+    },
+    "doktor": {
+      "name": "Doktorbreen",
+      "start_date": "2021-01-01",
+      "end_date": "2030-01-01",
+      "left": 532100,
+      "bottom": 8595120,
+      "right": 553580,
+      "top": 8624040,
+      "resolution": 20,
+      "standardization": {
+        "left": 535710,
+        "bottom": 8605050,
+        "right": 537100,
+        "top": 8607670
+      }
+    },
+    "etonfront": {
+      "name": "Etonbreen-front",
+      "start_date": "2018-01-01",
+      "end_date": "2030-01-01",
+      "left": 634480,
+      "bottom": 8851550,
+      "right": 646370,
+      "top": 8860570,
+      "standardization": {
+        "left": 638100,
+        "bottom": 8852280,
+        "right": 639220,
+        "top": 8853250
+      }
     }
   }
