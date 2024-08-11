@@ -1,8 +1,10 @@
 {
   "vallakra": {
+    "enable": true,
     "name": "Vallåkrabreen",
+    "build_vrts": true,
     "start_date": "2020-01-01",
-    "end_date": "2030-05-01",
+    "end_date": "none",
     "left": 544000,
     "bottom": 8638500,
     "right": 555000,
@@ -15,9 +17,11 @@
     }
   },
   "scheele": {
+    "enable": true,
     "name": "Scheelebreen",
     "start_date": "2018-01-01",
-    "end_date": "2030-05-02",
+    "end_date": "none",
+    "build_vrts": true,
     "left": 542000,
     "top": 8636000,
     "right": 552500,
@@ -28,219 +32,351 @@
         "right": 545000,
         "top": 8636000
       }
-    },
-    "rabot_moraine": {
-      "name": "Rabotbreen moraine",
-      "start_date": "2018-01-01",
-      "end_date": "2023-04-01",
+  },
+  "rabot_moraine": {
+    "enable": false,
+    "name": "Rabotbreen moraine",
+    "start_date": "2018-01-01",
+    "end_date": "2023-04-01",
+    "left": 559700,
+    "top": 8692300,
+    "right": 570400,
+    "bottom": 8687300,
+    "standardization": {
       "left": 559700,
       "top": 8692300,
-      "right": 570400,
-      "bottom": 8687300,
-      "standardization": {
-        "left": 559700,
-        "top": 8692300,
-        "right": 563000,
-        "bottom": 8690500
-      }
-    },
-    "natascha": {
-      "name": "Nataschabreen",
-      "start_date": "2018-01-01",
-      "end_date": "2030-04-01",
-      "left": 551300 ,
-      "top": 8633200,
-      "right": 563200,
-      "bottom": 8621300,
-      "standardization": {
-        "left": 556900,
-        "top": 8629630,
-        "right": 558000,
-        "bottom": 8628520
-      }
-    },
-    "liestol": {
-      "name": "Liestølbreen",
-      "start_date": "2018-01-01",
-      "end_date": "2030-04-01",
-      "left": 530000,
-      "top": 8604800,
-      "right": 556100,
-      "bottom": 8586000,
-      "resolution": 20,
-      "standardization": {
-        "left": 533190 ,
-        "top": 8595000,
-        "right": 538000,
-        "bottom": 8591700
-      }
-    },
-    "bore": {
-      "name": "Borebreen",
-      "start_date": "2018-01-01",
-      "end_date": "2030-04-01",
-      "left": 463680,
-      "top": 8722880,
-      "right": 486700,
-      "bottom": 8697100,
-      "resolution": 20,
-      "standardization": {
-        "left": 482100,
-        "top": 8707220,
-        "right": 485140,
-        "bottom": 8705230
-      }
-    },
-    "iskuras": {
-      "name": "Iskuras",
-      "start_date": "2020-01-01",
-      "end_date": "2023-04-01",
+      "right": 563000,
+      "bottom": 8690500
+    }
+  },
+  "natascha": {
+    "enable": false,
+    "name": "Nataschabreen",
+    "start_date": "2018-01-01",
+    "end_date": "none",
+    "build_vrts": true,
+    "left": 551300 ,
+    "top": 8633200,
+    "right": 563200,
+    "bottom": 8621300,
+    "standardization": {
+      "left": 556900,
+      "top": 8629630,
+      "right": 558000,
+      "bottom": 8628520
+    }
+  },
+  "paula": {
+    "enable": true,
+    "name": "Paulabreen",
+    "start_date": "2022-06-01",
+    "end_date": "none",
+    "build_vrts": true,
+    "left": 545600,
+    "top": 8640000,
+    "right": 563200,
+    "bottom": 8622400,
+    "resolution": 20,
+    "standardization": {
+      "left": 556900,
+      "top": 8629630,
+      "right": 558000,
+      "bottom": 8628520
+    }
+  },
+  "liestol": {
+    "enable": true,
+    "name": "Liestølbreen",
+    "start_date": "2018-01-01",
+    "end_date": "none",
+    "build_vrts": true,
+    "left": 530000,
+    "top": 8604800,
+    "right": 556100,
+    "bottom": 8586000,
+    "resolution": 20,
+    "standardization": {
+      "left": 533190 ,
+      "top": 8595000,
+      "right": 538000,
+      "bottom": 8591700
+    }
+  },
+  "bore": {
+    "enable": true,
+    "name": "Borebreen",
+    "start_date": "2018-01-01",
+    "end_date": "none",
+    "build_vrts": true,
+    "left": 463680,
+    "top": 8722880,
+    "right": 486700,
+    "bottom": 8697100,
+    "resolution": 20,
+    "standardization": {
+      "left": 482100,
+      "top": 8707220,
+      "right": 485140,
+      "bottom": 8705230
+    }
+  },
+  "iskuras": {
+    "enable": false,
+    "name": "Iskuras",
+    "start_date": "2020-01-01",
+    "end_date": "2023-04-01",
+    "left": 899710,
+    "bottom": 7724630,
+    "right": 907120,
+    "top": 7729060,
+    "standardization": {
       "left": 899710,
-      "bottom": 7724630,
-      "right": 907120,
       "top": 7729060,
-      "standardization": {
-        "left": 899710,
-        "top": 7729060,
-        "right": 901870,
-        "bottom": 7727140
-      }
-    },
-    "austfonna": {
-      "name": "Austfonna",
-      "start_date": "2020-01-01",
-      "end_date": "2030-05-01",
-      "left": 613300,
-      "bottom": 8805000,
-      "right": 738000,
-      "top": 8935000,
-      "resolution": 100,
-      "standardization": {
-        "left": 642300,
-        "bottom": 8882900,
-        "right": 650900,
-        "top": 8880000
-      }
-    },
-    "negri": {
-      "name": "Negribreen",
-      "start_date": "2020-01-01",
-      "end_date": "2030-01-01",
-      "left": 582350,
-      "bottom": 8720700,
-      "right": 593800,
-      "top": 8734150,
-      "standardization": {
-        "left": 590080,
-        "bottom": 8732310,
-        "right": 592860,
-        "top": 8734750
-      }
-    },
-    "petermann": {
-      "name": "Petermannbreen",
-      "start_date": "2015-01-01",
-      "end_date": "2030-01-01",
-      "left": 577470,
-      "bottom": 8710620,
-      "right": 586820,
-      "top": 8718260,
-      "standardization": {
-        "left": 580700,
-        "bottom": 8716430,
-        "right": 582140,
-        "top": 8717870
-      }
-    }, 
-    "arnesen": {
-      "name": "Arnesenbreen",
-      "start_date": "2015-01-01",
-      "end_date": "2030-01-01",
-      "left": 569680,
-      "bottom": 8633400,
-      "right": 579870,
-      "top": 8648730,
-      "standardization": {
-        "left": 576710,
-        "bottom": 8645620,
-        "right": 578740,
-        "top": 8647320
-      }
-    },
-    "johansen": {
-      "name": "Johansenbreen",
-      "start_date": "2021-01-01",
-      "end_date": "2030-01-01",
-      "left": 575080,
-      "bottom": 8717200,
-      "right": 586220,
-      "top": 8726170,
-      "standardization": {
-        "left": 584300,
-        "bottom": 8720150,
-        "right": 585610,
-        "top": 8721950
-      }
-    },
-    "ganskij": {
-      "name": "Ganskijbreen",
-      "start_date": "2016-01-01",
-      "end_date": "2030-01-01",
-      "left": 620160,
-      "bottom": 8742050,
-      "right": 628320,
-      "top": 8750790,
-      "standardization": {
-        "left": 620790,
-        "bottom": 8745630,
-        "right": 621770,
-        "top": 8747380
-      }
-    },
-    "sonklar": {
-      "name": "Sonklarbreen",
-      "start_date": "2018-01-01",
-      "end_date": "2030-01-01",
-      "left": 604430,
-      "bottom": 8735950,
-      "right": 616190,
-      "top": 8744690,
-      "standardization": {
-        "left": 611070,
-        "bottom": 8736190,
-        "right": 612460,
-        "top": 8738230
-      }
-    },
-    "doktor": {
-      "name": "Doktorbreen",
-      "start_date": "2021-01-01",
-      "end_date": "2030-01-01",
-      "left": 532100,
-      "bottom": 8595120,
-      "right": 553580,
-      "top": 8624040,
-      "resolution": 20,
-      "standardization": {
-        "left": 535710,
-        "bottom": 8605050,
-        "right": 537100,
-        "top": 8607670
-      }
-    },
-    "etonfront": {
-      "name": "Etonbreen-front",
-      "start_date": "2018-01-01",
-      "end_date": "2030-01-01",
-      "left": 634480,
-      "bottom": 8851550,
-      "right": 646370,
-      "top": 8860570,
-      "standardization": {
-        "left": 638100,
-        "bottom": 8852280,
-        "right": 639220,
-        "top": 8853250
-      }
+      "right": 901870,
+      "bottom": 7727140
+    }
+  },
+  "austfonna": {
+    "enable": false,
+    "name": "Austfonna",
+    "start_date": "2020-01-01",
+    "end_date": "none",
+    "left": 613300,
+    "bottom": 8805000,
+    "right": 738000,
+    "top": 8935000,
+    "resolution": 100,
+    "standardization": {
+      "left": 642300,
+      "bottom": 8882900,
+      "right": 650900,
+      "top": 8880000
+    }
+  },
+  "negri": {
+    "enable": true,
+    "name": "Negribreen",
+    "start_date": "2020-01-01",
+    "end_date": "none",
+    "left": 582350,
+    "bottom": 8720700,
+    "right": 593800,
+    "top": 8734150,
+    "standardization": {
+      "left": 590080,
+      "bottom": 8732310,
+      "right": 592860,
+      "top": 8734750
+    }
+  },
+  "petermann": {
+    "enable": true,
+    "name": "Petermannbreen",
+    "start_date": "2015-01-01",
+    "end_date": "none",
+    "left": 577470,
+    "bottom": 8710620,
+    "right": 586820,
+    "top": 8718260,
+    "standardization": {
+      "left": 580700,
+      "bottom": 8716430,
+      "right": 582140,
+      "top": 8717870
+    }
+  }, 
+  "arnesen": {
+    "enable": true,
+    "name": "Arnesenbreen",
+    "start_date": "2015-01-01",
+    "end_date": "2022-01-01",
+    "build_vrts": true,
+    "left": 569680,
+    "bottom": 8633400,
+    "right": 579870,
+    "top": 8648730,
+    "standardization": {
+      "left": 576710,
+      "bottom": 8645620,
+      "right": 578740,
+      "top": 8647320
+    }
+  },
+  "johansen": {
+    "enable": true,
+    "name": "Johansenbreen",
+    "start_date": "2021-01-01",
+    "end_date": "none",
+    "left": 575080,
+    "bottom": 8717200,
+    "right": 586220,
+    "top": 8726170,
+    "standardization": {
+      "left": 584300,
+      "bottom": 8720150,
+      "right": 585610,
+      "top": 8721950
+    }
+  },
+  "ganskij": {
+    "enable": true,
+    "name": "Ganskijbreen",
+    "start_date": "2016-01-01",
+    "end_date": "none",
+    "mode": "ASCENDING_HH",
+    "left": 620160,
+    "bottom": 8742050,
+    "right": 628320,
+    "top": 8750790,
+    "standardization": {
+      "left": 620790,
+      "bottom": 8745630,
+      "right": 621770,
+      "top": 8747380
+    }
+  },
+  "sonklar": {
+    "enable": true,
+    "name": "Sonklarbreen",
+    "start_date": "2018-01-01",
+    "end_date": "none",
+    "left": 604430,
+    "bottom": 8735950,
+    "right": 616190,
+    "top": 8744690,
+    "standardization": {
+      "left": 611070,
+      "bottom": 8736190,
+      "right": 612460,
+      "top": 8738230
+    }
+  },
+  "doktor": {
+    "enable": true,
+    "name": "Doktorbreen",
+    "start_date": "2021-01-01",
+    "end_date": "none",
+    "build_vrts": true,
+    "left": 532100,
+    "bottom": 8595120,
+    "right": 553580,
+    "top": 8624040,
+    "resolution": 20,
+    "standardization": {
+      "left": 535710,
+      "bottom": 8605050,
+      "right": 537100,
+      "top": 8607670
+    }
+  },
+  "etonfront": {
+    "enable": true,
+    "name": "Etonbreen-front",
+    "start_date": "2018-01-01",
+    "end_date": "none",
+    "build_vrts": true,
+    "mode": "ASCENDING_HH",
+    "left": 634480,
+    "bottom": 8851550,
+    "right": 646370,
+    "top": 8860570,
+    "standardization": {
+      "left": 638100,
+      "bottom": 8852280,
+      "right": 639220,
+      "top": 8853250
+    }
+  },
+  "nordsyssel": {
+    "enable": true,
+    "name": "Nordsysselbreen",
+    "start_date": "2022-06-01",
+    "end_date": "none",
+    "build_vrts": true,
+    "mode": "ASCENDING_HH",
+    "left": 557400,
+    "bottom": 8636000,
+    "right": 578000,
+    "top": 8652300,
+    "resolution": 20,
+    "standardization": {
+      "left": 566860,
+      "bottom": 8650080,
+      "right": 570730,
+      "top": 8652100
+    }
+  },
+  "sefstrom": {
+    "enable": true,
+    "name": "Sefströmbreen",
+    "start_date": "2022-06-01",
+    "end_date": "none",
+    "build_vrts": true,
+    "left": 467800,
+    "bottom": 8735500,
+    "right": 491400,
+    "top": 8748900,
+    "resolution": 20,
+    "standardization": {
+      "left": 488270,
+      "bottom":8738340, 
+      "right": 490900,
+      "top": 8741060
+    }
+  },
+  "kval": {
+    "enable": true,
+    "name": "Kvalbreen",
+    "start_date": "2016-01-01",
+    "end_date": "none",
+    "build_vrts": true,
+    "mode": "ASCENDING_HH",
+    "left": 566300,
+    "bottom": 8606400,
+    "right": 577900,
+    "top": 8618000,
+    "standardization": {
+      "left": 571300,
+      "bottom": 8606300,
+      "right": 577900,
+      "top": 8609240
+    }
+  },
+  "penck": {
+    "enable": true,
+    "name": "Penckbreen",
+    "start_date": "2015-01-01",
+    "end_date": "2022-01-01",
+    "mode": "ASCENDING_HH",
+    "build_vrts": true,
+    "left": 506400,
+    "bottom": 8582000,
+    "right": 522800,
+    "top": 8606900,
+    "resolution": 20,
+    "standardization": {
+      "left": 517330,
+      "bottom": 8598500,
+      "right": 520200,
+      "top": 8602800
+    }
+  },
+  "osborne": {
+    "enable": true,
+    "name": "Vestre Osbornebreen",
+    "start_date": "2015-01-01",
+    "end_date": "2024-04-01",
+    "mode": "ASCENDING_HH",
+    "left": 453500,
+    "bottom": 8721400,
+    "right": 465700,
+    "top": 8740400,
+    "resolution": 20,
+    "standardization": {
+      "left": 459240,
+      "bottom": 8723500,
+      "right": 460000,
+      "top": 8724400
     }
   }
+}

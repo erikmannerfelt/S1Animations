@@ -7,7 +7,7 @@ from pathlib import Path
 
 CACHE_DIR = Path(".cache")
 
-def measure_lengths(glacier: str = "vallakrabreen", use_cache: bool = True, radius: float = 200.):
+def measure_lengths(glacier: str = "nataschabreen", use_cache: bool = True, radius: float = 200.):
     glacier_dir = Path(f"GIS/shapes/{glacier}")
 
     cache_filepath = CACHE_DIR / f"{glacier}_lengths.csv"
@@ -150,6 +150,7 @@ def main(glacier: str = "vallakrabreen", use_cache: bool = True):
     xlim = plt.gca().get_xlim()
     plt.hlines(0, *xlim, colors="black", linestyles=":", alpha=0.5, zorder=0)
     plt.xlim(xlim)
+    plt.grid()
 
     plt.tight_layout()
     plt.savefig(output_dir / f"{s1_key}_length.jpg", dpi=600)

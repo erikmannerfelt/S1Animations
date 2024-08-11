@@ -29,16 +29,21 @@ class Region:
         self,
         key: str,
         name: str,
-        start_date: str,
-        end_date: str,
         left: float,
         bottom: float,
         right: float,
         top: float,
+        start_date: str,
+        end_date: str = "",
+        enable: bool = True,
+        build_vrts: bool = False,
+        mode: str = "DESCENDING_VV",
         standardization: dict[str, float] | None = None,
         resolution: float = 10.0,
         crs_epsg: int = 32633,
     ) -> None:
+        if len(end_date) == 0 or end_date.strip().lower() == "none":
+            end_date = "2100-01-01"
         self.key = key
         self.name = name
         self.start_date = start_date
@@ -47,6 +52,9 @@ class Region:
         self.bottom = bottom
         self.right = right
         self.top = top
+        self.mode = mode
+        self.enable = enable
+        self.build_vrts = build_vrts
         self.resolution = resolution
         self.standardization = standardization
 
@@ -359,6 +367,7 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
 
     anim_filename = data_path.parent.joinpath(f"animations/{region.key}_{band_name.lower()}.mp4")
     anim_lr_filename = anim_filename.with_stem(anim_filename.stem + "_lr")
+    anim_rev_filename = anim_lr_filename.with_name(anim_lr_filename.stem + "_rev.webm")
     anims_missing = (not anim_filename.is_file()) or (not anim_lr_filename.is_file())
 
     if (not anims_missing) and not redo:
@@ -373,7 +382,15 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
     # Convert times to datetime
     band["time"] = band["time"].astype("datetime64[ms]")
     band.attrs["times"] = np.array(band.attrs["times"]).astype("datetime64[ms]")
-    band = band.resample(time="1D").mean().dropna("time", how="all").load()
+
+    # The sortby("time") is slow but sometimes necessary
+    try:
+        band = band.resample(time="1D").mean().dropna("time", how="all").load()
+    except ValueError as exception:
+        if "index must be monotonic" not in str(exception):
+            raise exception
+        band = band.sortby("time").resample(time="1D").mean().dropna("time", how="all").load()
+        
 
     # After filtering out empty files, list the frame paths again
     frame_paths = [get_frame_filenames(i=i, times_arr=band.time.values) for i in range(band.shape[0])]
@@ -541,146 +558,172 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
             )
 
             shutil.move(temp_gif_opt, output_path_gif)
-
-
-def animate(frame_dir: Path, output_path: Path):
-
-    if output_path.suffix != ".mp4":
-        raise ValueError(f"Output path must be .mp4. Given: {output_path}")
-
-    output_path_lr = output_path.with_stem(output_path.stem + "_lr")
-    output_path_gif = output_path.with_name(output_path.stem + "_lr.gif")
-    output_path_rev = output_path.with_name(output_path.stem + "_rev.webm")
-
-    if output_path.is_file() and output_path_lr.is_file():
-        return output_path, output_path_lr
-
-    output_path.parent.mkdir(exist_ok=True, parents=True)
-
-    with tempfile.TemporaryDirectory() as temp_dir_str:
-        temp_dir = Path(temp_dir_str)
-
-        for i, frame_path in enumerate(sorted(list(frame_dir.glob("*.jpg")))):
-            filename = Path(temp_dir_str).joinpath(f"frame_{str(i).zfill(4)}.jpg")
-            shutil.copy(frame_path, filename)
-
-        print(f"Generating {output_path}")
         
-        temp_anim = temp_dir / "anim.mp4"
-        subprocess.run([
-            "/usr/bin/env",
-            "ffmpeg",
-            "-framerate",
-            "30",
-            "-y",
-            "-pattern_type",
-            "glob",
-            "-i",
-            f"{temp_dir_str}/*.jpg",
-            "-c:v",
-            "libx264",
-            "-pix_fmt",
-            "yuv420p",
-            str(temp_anim),
-        ], capture_output=True, check=True)
+            skip_secs = {"liestol": 4, "natascha": 4, "scheele": 3, "bore": 3, "vallakra": 1, "kval": 3}
 
-        shutil.move(temp_anim, output_path)
-        print(f"Generating {output_path_lr}")
+            extra = []
+            for key in skip_secs:
+                if key in str(anim_filename):
+                    extra += ["-ss", str(skip_secs[key])]
 
-        temp_anim_lr = temp_dir / "anim_lr.mp4"
-        subprocess.run(
-            [
-                "/usr/bin/env",
-                "ffmpeg",
-                "-i",
-                str(output_path),
-                "-y",
-                "-vf",
-                "scale=trunc(iw/4)*2:trunc(ih/4)*2",
-                "-c:v",
-                "libx265",
-                "-crf",
-                "28",
-                str(temp_anim_lr),
-            ],
-            capture_output=True,
-            check=True,
-        )
-        shutil.move(temp_anim_lr, output_path_lr)
+            temp_rev = temp_dir / "anim_rev.webm"
+            print(f"Generating {anim_rev_filename}")
+            subprocess.run(
+                [
+                    "/usr/bin/env",
+                    "ffmpeg",
+                    *extra,
+                    "-i",
+                    str(anim_lr_filename),
+                    "-b:v",
+                    "10000k",
+                    "-y",
+                    "-filter_complex",
+                    "reverse[r];[0][r]concat=n=2:v=1:a=0",
+                    str(temp_rev),
+                ],
+                capture_output=True,
+                check=True,
+            )
+            shutil.move(temp_rev, anim_rev_filename)
 
-        print(f"Generating {output_path_gif}")
-        temp_gif = temp_dir / "anim.gif"
-        subprocess.run(
-            [
-                "/usr/bin/env",
-                "ffmpeg",
-                "-i",
-                str(output_path),
-                "-pix_fmt",
-                "gray",
-                "-filter_complex",
-                ",".join(
-                    [
-                        "reverse[r];[0][r]concat=n=2:v=1:a=0",
-                        "fps=10",
-                        "scale=480:-1:flags=lanczos",
-                        "split [a][b];[a]palettegen [p];[b][p] paletteuse",
-                    ]
-                ),
-                str(temp_gif),
-            ],
-            capture_output=True,
-            check=True,
-        )
-        temp_gif_opt = temp_gif.with_stem("anim_opt")
 
-        subprocess.run(
-            [
-                "/usr/bin/env",
-                "gifsicle",
-                "-O5",
-                "--lossy=100",
-                str(temp_gif),
-                "-o",
-                str(temp_gif_opt),
-            ],
-            capture_output=True,
-            check=True,
-        )
+# def animate(frame_dir: Path, output_path: Path):
 
-        shutil.move(temp_gif_opt, output_path_gif)
+#     if output_path.suffix != ".mp4":
+#         raise ValueError(f"Output path must be .mp4. Given: {output_path}")
+
+#     output_path_lr = output_path.with_stem(output_path.stem + "_lr")
+#     output_path_gif = output_path.with_name(output_path.stem + "_lr.gif")
+#     output_path_rev = output_path.with_name(output_path.stem + "_rev.webm")
+
+#     if output_path.is_file() and output_path_lr.is_file():
+#         return output_path, output_path_lr
+
+#     output_path.parent.mkdir(exist_ok=True, parents=True)
+
+#     with tempfile.TemporaryDirectory() as temp_dir_str:
+#         temp_dir = Path(temp_dir_str)
+
+#         for i, frame_path in enumerate(sorted(list(frame_dir.glob("*.jpg")))):
+#             filename = Path(temp_dir_str).joinpath(f"frame_{str(i).zfill(4)}.jpg")
+#             shutil.copy(frame_path, filename)
+
+#         print(f"Generating {output_path}")
+        
+#         temp_anim = temp_dir / "anim.mp4"
+#         subprocess.run([
+#             "/usr/bin/env",
+#             "ffmpeg",
+#             "-framerate",
+#             "30",
+#             "-y",
+#             "-pattern_type",
+#             "glob",
+#             "-i",
+#             f"{temp_dir_str}/*.jpg",
+#             "-c:v",
+#             "libx264",
+#             "-pix_fmt",
+#             "yuv420p",
+#             str(temp_anim),
+#         ], capture_output=True, check=True)
+
+#         shutil.move(temp_anim, output_path)
+#         print(f"Generating {output_path_lr}")
+
+#         temp_anim_lr = temp_dir / "anim_lr.mp4"
+#         subprocess.run(
+#             [
+#                 "/usr/bin/env",
+#                 "ffmpeg",
+#                 "-i",
+#                 str(output_path),
+#                 "-y",
+#                 "-vf",
+#                 "scale=trunc(iw/4)*2:trunc(ih/4)*2",
+#                 "-c:v",
+#                 "libx265",
+#                 "-crf",
+#                 "28",
+#                 str(temp_anim_lr),
+#             ],
+#             capture_output=True,
+#             check=True,
+#         )
+#         shutil.move(temp_anim_lr, output_path_lr)
+
+#         print(f"Generating {output_path_gif}")
+#         temp_gif = temp_dir / "anim.gif"
+#         subprocess.run(
+#             [
+#                 "/usr/bin/env",
+#                 "ffmpeg",
+#                 "-i",
+#                 str(output_path),
+#                 "-pix_fmt",
+#                 "gray",
+#                 "-filter_complex",
+#                 ",".join(
+#                     [
+#                         "reverse[r];[0][r]concat=n=2:v=1:a=0",
+#                         "fps=10",
+#                         "scale=480:-1:flags=lanczos",
+#                         "split [a][b];[a]palettegen [p];[b][p] paletteuse",
+#                     ]
+#                 ),
+#                 str(temp_gif),
+#             ],
+#             capture_output=True,
+#             check=True,
+#         )
+#         temp_gif_opt = temp_gif.with_stem("anim_opt")
+
+#         subprocess.run(
+#             [
+#                 "/usr/bin/env",
+#                 "gifsicle",
+#                 "-O5",
+#                 "--lossy=100",
+#                 str(temp_gif),
+#                 "-o",
+#                 str(temp_gif_opt),
+#             ],
+#             capture_output=True,
+#             check=True,
+#         )
+
+#         shutil.move(temp_gif_opt, output_path_gif)
 
         
-        skip_secs = {"liestol": 4, "natascha": 4, "scheele": 3, "bore": 3, "vallakra": 1}
+#         skip_secs = {"liestol": 4, "natascha": 4, "scheele": 3, "bore": 3, "vallakra": 1, "kval": 3}
 
-        extra = []
-        for key in skip_secs:
-            if key in str(output_path):
-                extra += ["-ss", str(skip_secs[key])]
+#         extra = []
+#         for key in skip_secs:
+#             if key in str(output_path):
+#                 extra += ["-ss", str(skip_secs[key])]
 
-        temp_rev = temp_dir / "anim_rev.webm"
-        subprocess.run(
-            [
-                "/usr/bin/env",
-                "ffmpeg",
-                *extra,
-                "-i",
-                str(output_path_lr),
-                "-b:v",
-                "-y",
-                "-filter_complex",
-                "'reverse[r];[0][r]concat=n=2:v=1:a=0'",
-                str(temp_rev),
-            ],
-            capture_output=True,
-            check=True,
-        )
-        shutil.move(temp_rev, output_path_rev)
-            
-        
+#         temp_rev = temp_dir / "anim_rev.webm"
+#         print(f"Generating {output_path_rev}")
+#         subprocess.run(
+#             [
+#                 "/usr/bin/env",
+#                 "ffmpeg",
+#                 *extra,
+#                 "-i",
+#                 str(output_path_lr),
+#                 "-b:v",
+#                 "-y",
+#                 "-filter_complex",
+#                 "'reverse[r];[0][r]concat=n=2:v=1:a=0'",
+#                 str(temp_rev),
+#             ],
+#             capture_output=True,
+#             check=True,
+#         )
+#         shutil.move(temp_rev, output_path_rev)
 
-
-    return output_path, output_path_lr
+#     return output_path, output_path_lr
    
 
 
@@ -699,18 +742,25 @@ def main():
     except Exception as e:
         raise e
     for region in regions:
+
+        if not region.enable:
+            print(f"Skipping {region} (disabled)")
+            continue
+
         print(region)
 
-        if region.key not in ["arnesen", "vallakra", "scheele", "liestol", "bore", "natascha", "johansen", "petermann", "sonklar", "negri", "doktor", "etonfront"]:
-            continue
+        # if region.key not in ["paula", "arnesen", "vallakra", "scheele", "liestol", "bore", "johansen", "petermann", "sonklar", "negri", "doktor", "etonfront", "nordsyssel"]:
+        #     continue
 
         filepath = download_region_data(region, n_workers=None, redo=redo)
 
-        if region.key in ["scheele", "natascha", "vallakra", "etonfront", "bore", "liestol", "doktor", "arnesen"]:
+        if region.build_vrts:
             build_vrts(filepath)
 
-        if region.key == "iskuras":
-            continue
+        # if region.key in ["scheele", "natascha", "vallakra", "etonfront", "bore", "liestol", "doktor", "arnesen", "paula", "nordsyssel"]:
+
+        # if region.key == "iskuras":
+        #     continue
 
         # if region.key == "negri":
         #     build_vrts(filepath)
@@ -734,14 +784,11 @@ def main():
                 return
 
 
-
-                
+        plot_data(region, region.mode, redo=redo)
+        # if region.key in ["ganskij", "etonfront", "nordsyssel"]:
+        #     plot_data(region, "ASCENDING_HH", redo=redo)
             
-
-        if region.key in ["ganskij", "etonfront"]:
-            plot_data(region, "ASCENDING_HH", redo=redo)
-            
-        plot_data(region, "DESCENDING_VV", redo=redo)
+        # plot_data(region, "DESCENDING_VV", redo=redo)
 if __name__ == "__main__":
     main()
 
