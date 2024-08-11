@@ -4,3 +4,5 @@ credentials.json
 output/
 .cache/
 *.qmd
+for_livingice/
+S1_animation/
