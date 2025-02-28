@@ -27,11 +27,11 @@
     "right": 552500,
     "bottom": 8619000,
     "standardization": {
-        "left": 543000,
-        "bottom": 8633000,
-        "right": 545000,
-        "top": 8636000
-      }
+      "left": 543000,
+      "bottom": 8633000,
+      "right": 545000,
+      "top": 8636000
+    }
   },
   "rabot_moraine": {
     "enable": false,
@@ -55,7 +55,7 @@
     "start_date": "2018-01-01",
     "end_date": "none",
     "build_vrts": true,
-    "left": 551300 ,
+    "left": 551300,
     "top": 8633200,
     "right": 563200,
     "bottom": 8621300,
@@ -96,7 +96,7 @@
     "bottom": 8586000,
     "resolution": 20,
     "standardization": {
-      "left": 533190 ,
+      "left": 533190,
       "top": 8595000,
       "right": 538000,
       "bottom": 8591700
@@ -184,7 +184,7 @@
       "right": 582140,
       "top": 8717870
     }
-  }, 
+  },
   "arnesen": {
     "enable": true,
     "name": "Arnesenbreen",
@@ -319,7 +319,7 @@
     "resolution": 20,
     "standardization": {
       "left": 488270,
-      "bottom":8738340, 
+      "bottom": 8738340,
       "right": 490900,
       "top": 8741060
     }
@@ -328,7 +328,7 @@
     "enable": true,
     "name": "Kvalbreen",
     "start_date": "2016-01-01",
-    "end_date": "none",
+    "end_date": "2025-01-01",
     "build_vrts": true,
     "mode": "ASCENDING_HH",
     "left": 566300,
@@ -367,6 +367,7 @@
     "start_date": "2015-01-01",
     "end_date": "2024-04-01",
     "mode": "ASCENDING_HH",
+    "build_vrts": true,
     "left": 453500,
     "bottom": 8721400,
     "right": 465700,
@@ -377,6 +378,92 @@
       "bottom": 8723500,
       "right": 460000,
       "top": 8724400
+    }
+  },
+  "morsnev": {
+    "enable": true,
+    "name": "Moršnevbreen",
+    "start_date": "2015-01-01",
+    "end_date": "2021-12-31",
+    "mode": "ASCENDING_HH",
+    "build_vrts": true,
+    "left": 555900,
+    "bottom": 8608900,
+    "right": 570400,
+    "top": 8632700,
+    "resolution": 20,
+    "standardization": {
+      "left": 562290,
+      "bottom": 8615030,
+      "right": 565010,
+      "top": 8617920
+    }
+  },
+  "monaco": {
+    "enable": true,
+    "name": "Monacobreen",
+    "start_date": "2016-01-01",
+    "end_date": "2022-12-31",
+    "mode": "ASCENDING_HH",
+    "left": 437800,
+    "bottom": 8799200,
+    "right": 460600,
+    "top": 8834000,
+    "resolution": 30,
+    "standardization": {
+      "left": 452410,
+      "bottom": 8826600,
+      "right": 457000,
+      "top": 8832700
+    }
+  },
+  "stone": {
+    "enable": true,
+    "name": "Stonebreen",
+    "start_date": "2015-01-01",
+    "end_date": "2024-03-01",
+    "mode": "ASCENDING_HH",
+    "build_vrts": true,
+    "left": 695500,
+    "bottom": 8633000,
+    "right": 721900,
+    "top": 8654600,
+    "resolution": 20,
+    "standardization": {
+      "left": 709400,
+      "bottom": 8635200,
+      "right": 712200,
+      "top": 8639100
+    }
+  },
+  "basin2": {
+    "enable": true,
+    "name": "Austfonna Basin-2",
+    "start_date": "2015-01-01",
+    "end_date": "2019-01-01",
+    "mode": "ASCENDING_HH",
+    "resolution": 20,
+    "left": 686160,
+    "bottom": 8817800,
+    "right": 703300,
+    "top": 8838500
+  },
+  "delta": {
+    "enable": true,
+    "name": "Deltabreen",
+    "start_date": "2023-01-01",
+    "end_date": "none",
+    "mode": "ASCENDING_HH",
+    "resolution": 15,
+    "left": 688770,
+    "bottom": 8619880,
+    "right": 705330,
+    "top": 8637840,
+    "standardization": {
+      "left": 689880,
+      "bottom": 8628500,
+      "right": 692850,
+      "top": 8629860
     }
   }
 }

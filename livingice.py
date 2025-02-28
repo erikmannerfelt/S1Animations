@@ -49,14 +49,16 @@ def main(poly_points_per_edge: int = 5):
 
         mode = values.get("mode", "DESCENDING_VV")
 
-        last_frame = sorted(Path(f"output/{key}/frames/{mode}").glob(f"*{mode}*.jpg"))[-1]
+        frames = sorted(Path(f"output/{key}/frames/{mode}").glob(f"*{mode}*.jpg"))
+        last_frame = frames[-1]
         image = Image.open(last_frame)
         image.thumbnail((512, 512))
 
         image.save(thumbnail_dir / f"thumbnail_{key}.jpg")
 
-        if values["end_date"].lower() in ["", "none"]:
-            values["end_date"] = last_frame.stem.split("_")[-1]
+        # if values["end_date"].lower() in ["", "none"]:
+        values["start_date"] = frames[0].stem.split("_")[-1]
+        values["end_date"] = last_frame.stem.split("_")[-1]
 
         points += [
             {key2: values[key2] for key2 in ["name", "start_date", "end_date"]} | {

@@ -5,10 +5,13 @@ import subprocess
 import tempfile
 import threading
 from pathlib import Path
+import warnings
 
 import geopandas as gpd
 import matplotlib.animation
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as pe
+from PIL import Image
 import numpy as np
 import pandas as pd
 import rasterio as rio
@@ -380,8 +383,10 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
     band = band.sel(time=band.attrs["times"])
 
     # Convert times to datetime
-    band["time"] = band["time"].astype("datetime64[ms]")
-    band.attrs["times"] = np.array(band.attrs["times"]).astype("datetime64[ms]")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=r".*Converting non-nanosecond.*")
+        band["time"] = band["time"].astype("datetime64[ms]")
+        band.attrs["times"] = np.array(band.attrs["times"]).astype("datetime64[ms]")
 
     # The sortby("time") is slow but sometimes necessary
     try:
@@ -404,10 +409,22 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
             y=slice(region.standardization["top"], region.standardization["bottom"]),
         ).mean(["x", "y"]).interpolate_na("time").fillna(-1)
         band /= -standardization
+    else:
+        band /= -band.median(["x", "y"]).fillna(1)
 
     read_lock = threading.Lock()
 
+    max_size_inch = 8.5
+    shape = (band.y.shape[0], band.x.shape[0])
+    if shape[0] > shape[1]:
+        figsize=((shape[1] / shape[0]) * max_size_inch, max_size_inch)
+    else:
+        figsize=(max_size_inch, (shape[0] / shape[1]) * max_size_inch)
+
+    out_size = None
+        
     def process(i: int, out_path: Path) -> Path | None:
+        nonlocal out_size
 
         with read_lock:
             image = band.isel(time=i).load()
@@ -417,7 +434,7 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
         if not np.any(np.isfinite(image.values)):
             return None
 
-        fig = plt.figure(figsize=(8, 8.5))
+        fig = plt.figure(figsize=figsize)
         axis = fig.add_subplot(111)
 
         axis.imshow(
@@ -428,15 +445,53 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
             extent=(image.x.min(), image.x.max(), image.y.min(), image.y.max()),
             interpolation="bilinear",
         )
+        plt.xlabel("Easting (m; UTM33N)")
+        plt.ylabel("Northing (m; UTM33N)")
+        plt.yticks(rotation=45)
         # fig.subplots_adjust(left=0, right=1, bottom=0.03, top=0.98)
         fig.tight_layout()
         axis.text(0.5, 0.99, f"{region.name}: {date}", transform=fig.transFigure, fontsize=16, ha="center", va="top")
 
+        axis.text(0.99, 0.01, "Creator: Erik Schytt Mannerfelt. Data: ESA Sentinel-1", transform=axis.transAxes, fontsize=8, va="bottom", ha="right", color="white", path_effects=[pe.withStroke(linewidth=1, foreground="black")]) 
+
+        # Add a "watch" showing the time of year
+        xlim = axis.get_xlim()
+        ylim = axis.get_ylim()
+        width = (xlim[1] - xlim[0]) * 0.04
+        center = (xlim[1] - width, ylim[1] - width)
+        circle = plt.Circle(center, width, facecolor="white", edgecolor="black", alpha=0.5)
+        axis.add_patch(circle)
+
+        month_frac = (image.time.dt.date.item().month + (image.time.dt.date.item().day / 30)) / 12
+        other_x = center[0] + np.sin((np.pi * 2) * month_frac) * width
+        other_y = center[1] + np.cos((np.pi * 2) * month_frac) * width
+        plt.plot([center[0], other_x], [center[1], other_y], color="black", alpha=0.5) 
+
+        # plt.show()
+        # raise NotImplementedError()
         fig.savefig(out_path, dpi=300)
 
         del fig
-
         plt.close()
+
+        # Below is a very ugly but needed procedure. It's so hard to figure out the output resolution of 
+        # matplotlib plots, and ffmpeg needs images to have even dimensions.
+        # This part checks if the dimensions are even, and if not, resizes the frame to the nearest even dimension.
+        # Since it's only shifting by a pixel at most, the stretch is not visible.
+        if out_size is None:
+            img = Image.open(out_path)
+            out_size = (img.height, img.width)
+        new_size = out_size
+        if (out_size[0] % 2 != 0):
+            new_size = (new_size[0] + 1, new_size[1])
+        if (out_size[1] % 2 != 0):
+            new_size = (new_size[0], new_size[1] + 1)
+
+        if new_size != out_size:
+            img = Image.open(out_path)
+            img.resize(new_size[::-1]).save(out_path) 
+        
+
 
         return out_path
 
@@ -541,6 +596,30 @@ def plot_data(region: Region, band_name: str = "ASCENDING_HV", n_workers: int | 
                 capture_output=True,
                 check=True,
             )
+            if False:
+                print("Generating huge GIF")
+                subprocess.run(
+                    [
+                        "/usr/bin/env",
+                        "ffmpeg",
+                        "-i",
+                        str(anim_filename),
+                        "-pix_fmt",
+                        "gray",
+                        "-filter_complex",
+                        ",".join(
+                            [
+                                "reverse[r];[0][r]concat=n=2:v=1:a=0",
+                                "fps=20",
+                                "scale=1080:-1:flags=lanczos",
+                                "split [a][b];[a]palettegen [p];[b][p] paletteuse",
+                            ]
+                        ),
+                        "liestol_fullres.gif",
+                    ],
+                    capture_output=True,
+                    check=True,
+                )
             temp_gif_opt = temp_gif.with_stem("anim_opt")
 
             subprocess.run(

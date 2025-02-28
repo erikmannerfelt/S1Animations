@@ -15,7 +15,7 @@ from osgeo import gdal, gdal_array
 import rasterio.warp
 import rasterio.features
 import geopandas as gpd
-from main import animate, build_vrts, download_region_data, load_regions, Region
+from main import build_vrts, download_region_data, load_regions, Region
 import scipy.spatial
 import shapely
 
@@ -594,7 +594,7 @@ def main() -> None:
         if region.key not in ["bore", "scheele", "vallakra", "natascha", "petermann", "johansen", "sonklar", "etonfront"]:
             continue
 
-        if region.key != "etonfront":
+        if region.key != "scheele":
             continue
 
         # if region.key != "scheele":
@@ -607,7 +607,7 @@ def main() -> None:
 
         # paths = [measure_velocities(region=region, radar_key=pol, debug=False) for pol in pols]
         # vel_path = merge_and_prep_series(path)
-        vel_path = measure_velocities(region=region, radar_key="ASCENDING_HH", debug=False)
+        vel_path = measure_velocities(region=region, radar_key="DESCENDING_VV", debug=False)
 
         analyze(vel_path)
            

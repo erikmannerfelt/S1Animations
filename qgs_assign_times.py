@@ -1,4 +1,16 @@
 import datetime
+
+def assign_fixed_time(layer, date):
+    temporal = layer.temporalProperties()
+    temporal.setMode(QgsRasterLayerTemporalProperties.ModeFixedTemporalRange)
+    temporal.setFixedTemporalRange(QgsDateTimeRange(date, date))
+    temporal.setIsActive(True)
+    
+
+def get_layers():
+    layers = QgsProject.instance().mapLayers()
+    return layers
+
 def main():
     layers = QgsProject.instance().mapLayers()
     
