@@ -465,5 +465,74 @@
       "right": 692850,
       "top": 8629860
     }
+  },
+  "tuna": {
+    "enable": true,
+    "name": "Tunabreen",
+    "start_date": "2016-01-01",
+    "end_date": "2020-01-01",
+    "mode": "ASCENDING_HH",
+    "resolution": 15,
+    "left": 550650,
+    "bottom": 8706930,
+    "right": 563180,
+    "top": 8729880,
+    "standardization": {
+      "left": 551430,
+      "bottom": 8722180,
+      "right": 554140,
+      "top": 8725520
+    }
+  },
+  "fjortende": {
+    "enable": true,
+    "name": "Fjortende Julibreen",
+    "start_date": "2017-01-01",
+    "end_date": "none",
+    "mode": "ASCENDING_HH",
+    "left": 434430,
+    "bottom": 8781630,
+    "right": 449690,
+    "top": 8793100,
+    "standardization": {
+      "left": 435130,
+      "bottom": 8790330,
+      "right": 436510,
+      "top": 8793560
+    }
+  },
+  "bjorlykke": {
+    "enable": true,
+    "name": "Bjørlykkebreen",
+    "start_date": "2015-01-01",
+    "end_date": "2022-01-01",
+    "mode": "ASCENDING_HH",
+    "left": 432290,
+    "bottom": 8808570,
+    "right": 444020,
+    "top": 8815660,
+    "standardization": {
+      "left": 436160,
+      "bottom": 8809550,
+      "right": 438730,
+      "top": 8811330
+    }
+  },
+  "croll": {
+    "enable": true,
+    "name": "Crollbreen et al., triple surge",
+    "start_date": "2015-01-01",
+    "end_date": "none",
+    "mode": "ASCENDING_HH",
+    "left": 548490,
+    "bottom": 8562460,
+    "right": 560890,
+    "top": 8578500,
+    "standardization": {
+      "left": 556170,
+      "bottom": 8567850,
+      "right": 559390,
+      "top": 8569260
+    }
   }
 }

@@ -11,8 +11,8 @@ earthengine-api
 folium
 zarr
 dask
-pydrive2
 glacier_lengths
 autorift
 scikitimage
 bottleneck
+tqdm

@@ -204,7 +204,7 @@ def download_region_data(region: Region, n_workers: int | None = 1, preview: boo
 
     import ee
 
-    ee.Initialize()
+    ee.Initialize(project="globalsurgedetection-2")
     collection = (
         ee.ImageCollection("COPERNICUS/S1_GRD")
         .filterBounds(ee.Geometry.BBox(*bbox_wgs84))

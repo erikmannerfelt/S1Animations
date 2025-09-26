@@ -49,7 +49,11 @@ def main(poly_points_per_edge: int = 5):
 
         mode = values.get("mode", "DESCENDING_VV")
 
-        frames = sorted(Path(f"output/{key}/frames/{mode}").glob(f"*{mode}*.jpg"))
+        dirname = Path(f"output/{key}/frames/{mode}")
+        frames = sorted(dirname.glob(f"*{mode}*.jpg"))
+
+        if len(frames) == 0:
+            raise ValueError(f"Could not find any frames in {dirname}")
         last_frame = frames[-1]
         image = Image.open(last_frame)
         image.thumbnail((512, 512))
