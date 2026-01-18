@@ -64,17 +64,19 @@ def main(poly_points_per_edge: int = 5):
         values["start_date"] = frames[0].stem.split("_")[-1]
         values["end_date"] = last_frame.stem.split("_")[-1]
 
-        points += [
-            {key2: values[key2] for key2 in ["name", "start_date", "end_date"]} | {
+        pts = {key2: values[key2] for key2 in ["name", "start_date", "end_date"]} | {
                 "mode": mode,
                 "key": key,
                 "animation_name": f"{key}_{mode.lower()}_lr_rev.webm",
                 "geometry": poly,
             }
-        ]
+        pts = pd.DataFrame.from_records([pts])
+        pts = gpd.GeoDataFrame(pts, crs=values.get("crs_epsg", 32633)).to_crs(4326)
+        points.append(pts)
 
-    points = pd.DataFrame.from_records(points)
-    points = gpd.GeoDataFrame(points, crs=32633).to_crs(4326)
+    # points = pd.DataFrame.from_records(points)
+    # points = gpd.GeoDataFrame(points, crs=32633).to_crs(4326)
+    points = pd.concat(points)
     points.to_file(out_dir / "surge_animations.geojson")
 
     animation_dir = out_dir / "animations"

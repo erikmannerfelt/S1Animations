@@ -4,7 +4,7 @@
     "name": "Vallåkrabreen",
     "build_vrts": true,
     "start_date": "2020-01-01",
-    "end_date": "none",
+    "end_date": "2025-10-18",
     "left": 544000,
     "bottom": 8638500,
     "right": 555000,
@@ -224,6 +224,9 @@
     "start_date": "2016-01-01",
     "end_date": "none",
     "mode": "ASCENDING_HH",
+    "relative_orbit_numbers": [
+      174
+    ],
     "left": 620160,
     "bottom": 8742050,
     "right": 628320,
@@ -306,8 +309,8 @@
       "top": 8652100
     }
   },
-  "sefstrom": {
-    "enable": true,
+  "sefstrom_old": {
+    "enable": false,
     "name": "Sefströmbreen",
     "start_date": "2022-06-01",
     "end_date": "none",
@@ -317,6 +320,25 @@
     "right": 491400,
     "top": 8748900,
     "resolution": 20,
+    "standardization": {
+      "left": 488270,
+      "bottom": 8738340,
+      "right": 490900,
+      "top": 8741060
+    }
+  },
+  "sefstrom": {
+    "enable": true,
+    "name": "Sefströmbreen",
+    "start_date": "2023-01-01",
+    "mode": "ASCENDING_HH",
+    "end_date": "none",
+    "build_vrts": true,
+    "left": 466700,
+    "bottom": 8732710,
+    "right": 489900,
+    "top": 8748900,
+    "resolution": 14,
     "standardization": {
       "left": 488270,
       "bottom": 8738340,
@@ -436,6 +458,18 @@
       "top": 8639100
     }
   },
+  "storisstraumen": {
+    "enable": true,
+    "name": "Storisstraumen",
+    "start_date": "2015-01-01",
+    "end_date": "none",
+    "mode": "ASCENDING_HH",
+    "resolution": 52,
+    "left": 660030,
+    "top": 8879670,
+    "bottom": 8818310,
+    "right": 725310
+  },
   "basin2": {
     "enable": true,
     "name": "Austfonna Basin-2",
@@ -533,6 +567,136 @@
       "bottom": 8567850,
       "right": 559390,
       "top": 8569260
+    }
+  },
+  "midtbreen": {
+    "enable": true,
+    "name": "Midtbreen",
+    "start_date": "2019-01-01",
+    "end_date": "none",
+    "mode": "ASCENDING_HH",
+    "left": 516330,
+    "top": 8833750,
+    "bottom": 8824900,
+    "right": 533720,
+    "standardization": {
+      "left": 518150,
+      "bottom": 8827080,
+      "right": 521150,
+      "top": 8829360
+    }
+  },
+  "basin7": {
+    "enable": true,
+    "name": "Austfonna Basin-7",
+    "start_date": "2017-01-01",
+    "end_date": "none",
+    "mode": "ASCENDING_HH",
+    "left": 710400,
+    "bottom": 8880200,
+    "right": 740600,
+    "top": 8898000,
+    "resolution": 22,
+    "standardization": {
+      "left": 721800,
+      "bottom": 8880500,
+      "right": 728700,
+      "top": 8884300
+    }
+  },
+  "franklin": {
+    "enable": true,
+    "name": "Franklinbreane",
+    "start_date": "2015-08-01",
+    "end_date": "2024-01-01",
+    "mode": "ASCENDING_HH",
+    "resolution": 12,
+    "relative_orbit_numbers": [
+      174
+    ],
+    "left": 578850,
+    "right": 607100,
+    "bottom": 8885900,
+    "top": 8903160,
+    "standardization": {
+      "left": 579590,
+      "right": 584000,
+      "bottom": 8885920,
+      "top": 8890820
+    }
+  },
+  "svalisbreen": {
+    "enable": true,
+    "name": "Svalisbreen",
+    "start_date": "2015-01-01",
+    "end_date": "2025-01-01",
+    "mode": "ASCENDING_HH",
+    "left": 538490,
+    "right": 548790,
+    "bottom": 8536480,
+    "top": 8549750,
+    "standardization": {
+      "left": 540390,
+      "right": 543830,
+      "bottom": 8547610,
+      "top": 8549450
+    }
+  },
+  "vasilevbreen": {
+    "enable": true,
+    "name": "Vasil'evbreen",
+    "start_date": "2015-01-01",
+    "end_date": "2024-01-01",
+    "mode": "ASCENDING_HH",
+    "left": 541170,
+    "right": 548350,
+    "bottom": 8528680,
+    "top": 8537880,
+    "standardization": {
+      "left": 545660,
+      "right": 546430,
+      "bottom": 8532780,
+      "top": 8534530
+    }
+  },
+  "vavilov": {
+    "enable": true,
+    "name": "Vavilov Ice Cap",
+    "start_date": "2015-06-01",
+    "end_date": "none",
+    "mode": "DESCENDING_HH",
+    "relative_orbit_numbers": [
+      107
+    ],
+    "instrument_mode": "EW",
+    "crs_epsg": 32646,
+    "resolution": 40,
+    "left": 510400,
+    "right": 562100,
+    "bottom": 8793910,
+    "top": 8822360,
+    "standardization": {
+      "left": 529270,
+      "right": 542610,
+      "bottom": 8795740,
+      "top": 8799620
+    }
+  },
+  "recherchebreen": {
+    "enable": true,
+    "name": "Recherchebreen",
+    "start_date": "2017-08-01",
+    "end_date": "2026-01-01",
+    "mode": "ASCENDING_HH",
+    "left": 489530,
+    "right": 511670,
+    "bottom": 8584380,
+    "top": 8603470,
+    "standardization": {
+      "left": 506880,
+      "right": 509860,
+      "bottom": 8594030,
+      "top": 8602230
     }
   }
 }

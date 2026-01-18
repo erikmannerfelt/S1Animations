@@ -41,9 +41,11 @@ class Region:
         enable: bool = True,
         build_vrts: bool = False,
         mode: str = "DESCENDING_VV",
+        instrument_mode: str = "IW",
         standardization: dict[str, float] | None = None,
         resolution: float = 10.0,
         crs_epsg: int = 32633,
+        relative_orbit_numbers: list[int] | None = None
     ) -> None:
         if len(end_date) == 0 or end_date.strip().lower() == "none":
             end_date = "2100-01-01"
@@ -60,8 +62,10 @@ class Region:
         self.build_vrts = build_vrts
         self.resolution = resolution
         self.standardization = standardization
+        self.instrument_mode = instrument_mode
 
         self.crs = rio.crs.CRS.from_epsg(crs_epsg)
+        self.relative_orbit_numbers = relative_orbit_numbers
 
     def __repr__(self) -> str:
         return f"Region (key: {self.key})"
@@ -209,9 +213,16 @@ def download_region_data(region: Region, n_workers: int | None = 1, preview: boo
         ee.ImageCollection("COPERNICUS/S1_GRD")
         .filterBounds(ee.Geometry.BBox(*bbox_wgs84))
         .filterDate(region.start_date, region.end_date)
-        .filter(ee.Filter.eq("instrumentMode", "IW"))
+        .filter(ee.Filter.eq("instrumentMode", region.instrument_mode))
         .filter(ee.Filter.eq("platform_number", "A"))
     )
+
+    if region.relative_orbit_numbers is not None:
+        collection = collection.filter(ee.Filter.inList("relativeOrbitNumber_start", region.relative_orbit_numbers))
+
+    if region.mode is not None:
+        orbit, pol = region.mode.split("_")
+        collection = collection.filter(ee.Filter.eq("orbitProperties_pass", orbit)).filter(ee.Filter.listContains("transmitterReceiverPolarisation", pol))
 
     img_info_list = []
     for img in collection.getInfo()["features"]:
@@ -246,7 +257,10 @@ def download_region_data(region: Region, n_workers: int | None = 1, preview: boo
         image = image_dict["image"]
         image_info = image_dict["image_info"]
         temp_path = image_dict["temp_path"]
-        pols = list(image_info["transmitterReceiverPolarisation"])
+        if region.mode is not None:
+            pols = [region.mode.split("_")[1]]
+        else:
+            pols = list(image_info["transmitterReceiverPolarisation"])
         # Useless warnings are triggered by GDAL because of bad geotiffs by EE
         gdal.PushErrorHandler("CPLQuietErrorHandler")
 
@@ -256,7 +270,7 @@ def download_region_data(region: Region, n_workers: int | None = 1, preview: boo
                     "bands": pols,
                     "region": ee.Geometry.BBox(*bbox_wgs84),
                     "scale": region.resolution,
-                    "crs": "epsg:32633",
+                    "crs": f"epsg:{region.crs.to_epsg()}",
                     "format": "GEO_TIFF",
                 }
             )
@@ -303,12 +317,22 @@ def download_region_data(region: Region, n_workers: int | None = 1, preview: boo
 
         progress_bar.update()
 
+    def try_process(*args, **kwargs):
+        for i in range(5):
+            try:
+                process(*args, **kwargs)
+                return
+            except Exception as e:
+                print(f"Got exception on attempt {i}: {e}")
+
+        raise Exception("Processing failed")
+
     os.makedirs(scenes_dir, exist_ok=True)
 
     with tqdm(total=len(images), smoothing=0.1, desc="Downloading scenes") as progress_bar:
         if n_workers != 1:
             with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
-                list(executor.map(lambda i: process(i, progress_bar=progress_bar), images))
+                list(executor.map(lambda i: try_process(i, progress_bar=progress_bar), images))
         else:
             for image_dict in images:
                 process(image_dict, progress_bar)
